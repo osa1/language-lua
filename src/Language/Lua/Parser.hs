@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts, NoMonomorphismRestriction #-}
 {-# OPTIONS_GHC -Wall
                 -fno-warn-hi-shadowing
                 -fno-warn-name-shadowing
@@ -6,49 +7,23 @@ module Language.Lua.Parser where
 
 import Prelude hiding (exp, LT, GT, EQ, repeat)
 
-import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Expr
-import Control.Applicative ((<*), (<$>), (<*>))
-
+import Language.Lua.Lexer
+import Language.Lua.Token
 import Language.Lua.Types
 
-spString :: String -> Parser String
-spString s = string s <* spaces
+import Text.Parsec hiding (string)
+import Text.Parsec.LTok
+import Text.Parsec.Expr
+import Control.Applicative ((<*), (<$>), (<*>))
 
-spChar :: Char -> Parser Char
-spChar c = char c <* spaces
+parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
+parens = between (tok LTokLParen) (tok LTokRParen)
 
-name :: Parser Name
-name = do
-    fc <- oneOf firstChar
-    r  <- optionMaybe (many $ oneOf rest)
-    spaces
-    return $ case r of
-               Nothing -> [fc]
-               Just s  -> fc : s
-  where firstChar = ['A'..'Z'] ++ ['a'..'z'] ++ "_"
-        rest      = firstChar ++ ['0'..'9']
+name :: Parser String
+name = tokenValue <$> anyIdent
 
 number :: Parser String
---number = try hexNum <|> try expNum <|> num
-number = num
-
-num :: Parser String
-num = do
-    f <- many1 int
-    dot <- optionMaybe $ char '.'
-    case dot of
-      Nothing -> return f
-      Just _ -> do
-          r <- many1 int
-          return $ f ++ "." ++ r
-  where int = oneOf ['0'..'9']
-
---hexNum :: Parser String
---hexNum = undefined -- TODO
-
---expNum :: Parser String
---expNum = undefined -- TODO
+number = tokenValue <$> anyNum
 
 var :: Parser Var
 var = --choice [ try select, try selectName, name' ]
@@ -59,29 +34,13 @@ var = --choice [ try select, try selectName, name' ]
         name' = Name <$> name
 
 stringlit :: Parser String
-stringlit = do
-  char '"'
-  s <- many $ noneOf "\"" -- FIXME
-  char '"'
-  return s
+stringlit = tokenValue <$> string
 
 prefixExp :: Parser PrefixExp
-prefixExp =
-  choice [ Paren <$> (spChar '(' >> exp <* spChar ')')
-         , PEFunCall <$> try funCall
-         , PEVar <$> var
-         ]
-
---funCall :: Parser FunCall
---funCall = do
---    prefix <- prefixExp
---    method <- optionMaybe methodName
---    arg <- funArg
---    return $ case method of
---                 Nothing -> NormalFunCall prefix arg
---                 Just m  -> MethodCall prefix m arg
---  where methodName = spChar ':' >> name
-
+prefixExp = choice [ Paren <$> (tok LTokLParen >> exp <* tok LTokRParen)
+                   , PEFunCall <$> try funCall
+                   , PEVar <$> var
+                   ]
 
 funCall :: Parser FunCall
 funCall = do
@@ -94,13 +53,13 @@ funCall = do
     return $ buildFunCall firstCall rest'
 
   where methodName :: Parser Name
-        methodName = spChar ':' >> name
+        methodName = tok LTokColon >> name
 
         argPart :: Parser (Maybe Name, FunArg)
         argPart = (,) <$> optionMaybe methodName <*> funArg
 
         prefixExp' :: Parser PrefixExp
-        prefixExp' = choice [ Paren <$> (spChar '(' >> exp <* spChar ')')
+        prefixExp' = choice [ Paren <$> parens exp
                             , PEVar <$> var
                             ]
 
@@ -111,44 +70,39 @@ funCall = do
                 Nothing -> buildFunCall (NormalFunCall (PEFunCall prefix) args) xs
                 Just m  -> buildFunCall (MethodCall (PEFunCall prefix) m args) xs
 
-
 funArg :: Parser FunArg
 funArg = tableArg <|> stringArg <|> parlist
   where tableArg = TableArg <$> table
         stringArg = StringArg <$> stringlit
-        parlist = do
-            spChar '('
-            exps <- exp `sepBy` spChar ','
-            spChar ')'
-            return $ Args exps
+        parlist = parens (do exps <- exp `sepBy` (tok LTokComma)
+                             return $ Args exps)
 
 funBody :: Parser FunBody
 funBody = do
     (params, vararg) <- parlist
     body <- block
+    tok LTokEnd
     return $ FunBody params vararg body
 
-  where parlist = do
-            spChar '('
-            vars <- name `sepBy` spChar ','
-            vararg <- optionMaybe $ (try $ spString "...") <|> (spString ",")
-            spChar ')'
-            return $ case vararg of
-                         Nothing -> (vars, False)
-                         Just "..." -> (vars, True)
-                         _ -> (vars, False)
+  where parlist = parens $ do
+          vars <- name `sepBy` (tok LTokComma)
+          vararg <- optionMaybe $ (try $ tok LTokEllipsis) <|> (tok LTokComma)
+          return $ case vararg of
+                       Nothing -> (vars, False)
+                       Just LTokEllipsis -> (vars, True)
+                       _ -> (vars, False)
 
 block :: Parser Block
 block = do
-  stats <- stat `sepBy` spaces
+  stats <- many (try stat)
   ret <- retstat
   return $ Block stats ret
 
 retstat :: Parser (Maybe [Exp])
 retstat = do
-  spString "return"
-  exps <- optionMaybe (exp `sepBy` spChar ',')
-  optionMaybe (spChar ';')
+  tok LTokReturn
+  exps <- optionMaybe (exp `sepBy` tok LTokComma)
+  optionMaybe (tok LTokSemic)
   return exps
 
 tableField :: Parser TableField
@@ -158,17 +112,17 @@ tableField = choice [ expField
                     ]
   where expField :: Parser TableField
         expField = do
-            spChar '['
-            e1 <- exp
-            spChar ']'
-            spChar '='
+            e1 <- between (tok LTokLBracket)
+                          (tok LTokRBracket)
+                          exp
+            tok LTokAssign
             e2 <- exp
             return $ ExpField e1 e2
 
         namedField :: Parser TableField
         namedField = do
             name' <- name
-            spChar '='
+            tok LTokAssign
             val <- exp
             return $ NamedField name' val
 
@@ -176,72 +130,71 @@ tableField = choice [ expField
         field = Field <$> exp
 
 table :: Parser Table
-table = do
-    spChar '{'
-    fields <- tableField `sepBy` fieldSep
-    optionMaybe fieldSep
-    return $ Table fields
-  where fieldSep = spChar ',' <|> spChar ';'
+table = between (tok LTokLBrace)
+                (tok LTokRBrace)
+                (do fields <- tableField `sepBy` fieldSep
+                    optionMaybe fieldSep
+                    return $ Table fields)
+  where fieldSep = tok LTokComma <|> tok LTokSemic
 
----------------------------------------------------------------------
--- Expressions
+-----------------------------------------------------------------------
+---- Expressions
 
 nilExp, boolExp, numberExp, stringExp, varargExp, fundefExp,
   prefixexpExp, tableconstExp, opExp, exp, exp' :: Parser Exp
 
-nilExp = string "nil" >> return Nil
+nilExp = tok LTokNil >> return Nil
 
-boolExp = (string "true" >> return (Bool "true")) <|>
-            (string "false" >> return (Bool "false"))
+boolExp = (tok LTokTrue >> return (Bool "true")) <|>
+            (tok LTokFalse >> return (Bool "false"))
 
 numberExp = Number <$> number
 
 stringExp = String <$> stringlit
 
-varargExp = string "..." >> return Vararg
+varargExp = tok LTokEllipsis >> return Vararg
 
 fundefExp = do
-  spString "function"
+  tok LTokFunction
   body <- funBody
   return $ EFunDef (FunDef body)
-
 
 prefixexpExp = PrefixExp <$> prefixExp
 
 tableconstExp = TableConst <$> table
 
-binary :: String -> (a -> a -> a) -> Assoc -> Operator Char () a
-binary name fun assoc = Infix (spString name >> return fun) assoc
+binary :: Monad m => LToken -> (a -> a -> a) -> Assoc -> Operator [LTok] u m a
+binary op fun assoc = Infix (tok op >> return fun) assoc
 
-prefix :: String -> (a -> a) -> Operator Char () a
-prefix name fun       = Prefix (spString name >> return fun)
+prefix :: Monad m => LToken -> (a -> a) -> Operator [LTok] u m a
+prefix op fun       = Prefix (tok op >> return fun)
 
-opTable :: [[Operator Char () Exp]]
-opTable = [ [ binary "^"   (Binop Exp)    AssocRight ]
-          , [ prefix "not" (Unop Not)
-            , prefix "#"   (Unop Len)
-            , prefix "-"   (Unop Neg)
+opTable :: Monad m => [[Operator [LTok] u m Exp]]
+opTable = [ [ binary LTokExp       (Binop Exp)    AssocRight ]
+          , [ prefix LTokNot       (Unop Not)
+            , prefix LTokSh        (Unop Len)
+            , prefix LTokMinus     (Unop Neg)
             ]
-          , [ binary "*"   (Binop Mul)    AssocLeft
-            , binary "/"   (Binop Div)    AssocLeft
-            , binary "%"   (Binop Mod)    AssocLeft
+          , [ binary LTokStar      (Binop Mul)    AssocLeft
+            , binary LTokSlash     (Binop Div)    AssocLeft
+            , binary LTokPercent   (Binop Mod)    AssocLeft
             ]
-          , [ binary "+"   (Binop Add)    AssocLeft
-            , binary "-"   (Binop Sub)    AssocLeft
+          , [ binary LTokPlus      (Binop Add)    AssocLeft
+            , binary LTokMinus     (Binop Sub)    AssocLeft
             ]
-          , [ binary ".."  (Binop Concat) AssocRight ]
-          , [ binary ">"   (Binop GT)     AssocLeft
-            , binary "<"   (Binop LT)     AssocLeft
-            , binary ">="  (Binop GTE)    AssocLeft
-            , binary "<="  (Binop LTE)    AssocLeft
+          , [ binary LTokDDot      (Binop Concat) AssocRight ]
+          , [ binary LTokGT        (Binop GT)     AssocLeft
+            , binary LTokLT        (Binop LT)     AssocLeft
+            , binary LTokGEq       (Binop GTE)    AssocLeft
+            , binary LTokLEq       (Binop LTE)    AssocLeft
             ]
-          , [ binary "and" (Binop And)    AssocLeft ]
-          , [ binary "or"  (Binop Or)     AssocLeft ]
+          , [ binary LTokAnd       (Binop And)    AssocLeft ]
+          , [ binary LTokOr        (Binop Or)     AssocLeft ]
           ]
 
 opExp = buildExpressionParser opTable exp' <?> "opExp"
 
-exp = spaces >>
+exp =
     choice [ try opExp
            , try nilExp
            , try boolExp
@@ -253,9 +206,9 @@ exp = spaces >>
            , try tableconstExp
            --, binopExp
            --, unopExp
-           ] <* spaces
+           ]
 
-exp' = spaces >>
+exp' =
     choice [ try nilExp
            , try boolExp
            , try numberExp
@@ -264,122 +217,119 @@ exp' = spaces >>
            , try fundefExp
            , try prefixexpExp
            , try tableconstExp
-           ] <* spaces
+           ]
 
----------------------------------------------------------------------
--- Statements
+-----------------------------------------------------------------------
+---- Statements
 
 assignStat, funCallStat, labelStat, breakStat, gotoStat,
     doStat, whileStat, repeatStat, ifStat, forRangeStat,
     forInStat, funAssignStat, localFunAssignStat, localAssignStat, stat :: Parser Stat
 
 emptyStat :: Parser ()
-emptyStat = optionMaybe (spChar ';') >> return ()
+emptyStat = optionMaybe (tok LTokSemic) >> return ()
 
 assignStat = do
-    vars <- var `sepBy` spChar ','
-    spChar '='
-    exps <- exp `sepBy` spChar ','
+    vars <- var `sepBy` tok LTokComma
+    tok LTokAssign
+    exps <- exp `sepBy` tok LTokComma
     return $ Assign vars exps
 
 funCallStat = FunCall <$> funCall
 
 labelStat = Label <$> label
-  where label = spString "::" >> (name <* spString "::")
+  where label = between (tok LTokDColon) (tok LTokDColon) name
 
-breakStat = spString "break" >> return Break
+breakStat = tok LTokBreak >> return Break
 
-gotoStat = Goto <$> (spString "goto" >> name)
+gotoStat = Goto <$> (tok LTokGoto >> name)
 
-doStat = do
-    spString "do"
-    b <- block
-    spString "end"
-    return $ Do b
+doStat = Do <$> between (tok LTokDo) (tok LTokEnd) block
 
-whileStat = do
-    spString "while"
-    cond <- exp
-    spString "do"
-    body <- block
-    spString "end"
-    return $ While cond body
+whileStat =
+  between (tok LTokWhile)
+          (tok LTokEnd)
+          (do cond <- exp
+              tok LTokDo
+              body <- block
+              return $ While cond body)
 
 repeatStat = do
-    spString "repeat"
+    tok LTokRepeat
     body <- block
-    spString "until"
+    tok LTokUntil
     cond <- exp
     return $ Repeat body cond
 
-ifStat = do
-    f <- ifPart
-    conds <- many elseifPart
-    l <- optionMaybe elsePart
-    spString "end"
-    return $ If (f : conds) l
+ifStat =
+  between (tok LTokIf)
+          (tok LTokEnd)
+          (do f <- ifPart
+              conds <- many elseifPart
+              l <- optionMaybe elsePart
+              return $ If (f:conds) l)
+
   where ifPart :: Parser (Exp, Block)
         ifPart = do
-            spString "if"
             cond <- exp
-            spString "then"
+            tok LTokThen
             body <- block
             return (cond, body)
 
         elseifPart :: Parser (Exp, Block)
         elseifPart = do
-            spString "elseif"
+            tok LTokElseIf
             cond <- exp
-            spString "then"
+            tok LTokThen
             body <- block
             return (cond, body)
 
         elsePart :: Parser Block
-        elsePart = spString "else" >> block
+        elsePart = tok LTokElse >> block
 
-forRangeStat = do
-    spString "for"
-    name' <- name
-    spChar '='
-    start <- exp
-    spChar ','
-    end <- exp
-    range <- optionMaybe $ spChar ',' >> exp
-    spString "do"
-    body <- block
-    spString "end"
-    return $ ForRange name' start end range body
+forRangeStat =
+    between (tok LTokFor)
+            (tok LTokEnd)
+            (do name' <- name
+                tok LTokAssign
+                start <- exp
+                tok LTokComma
+                end <- exp
+                range <- optionMaybe $ tok LTokComma >> exp
+                tok LTokDo
+                body <- block
+                return $ ForRange name' start end range body)
 
-forInStat = do
-    spString "for"
-    names <- name `sepBy` spChar ','
-    spString "in"
-    exps <- exp `sepBy` spChar ','
-    spString "do"
-    body <- block
-    spString "end"
-    return $ ForIn names exps body
+forInStat =
+    between (tok LTokFor)
+            (tok LTokEnd)
+            (do names <- name `sepBy` tok LTokComma
+                tok LTokIn
+                exps <- exp `sepBy` tok LTokComma
+                tok LTokDo
+                body <- block
+                return $ ForIn names exps body)
 
 funAssignStat = do
-    spString "function"
+    tok LTokFunction
     name' <- name
     body <- funBody
     return $ FunAssign name' body
 
 localFunAssignStat = do
-    spString "local"
-    spString "function"
+    tok LTokLocal
+    tok LTokFunction
     name' <- name
     body <- funBody
     return $ LocalFunAssign name' body
 
 localAssignStat = do
-    spString "local"
-    names <- name `sepBy` spChar ','
-    rest <- optionMaybe $ spChar '=' >> exp `sepBy` spChar ','
+    tok LTokLocal
+    names <- name `sepBy` tok LTokComma
+    rest <- optionMaybe $ (tok LTokAssign) >> exp `sepBy` (tok LTokComma)
     return $ LocalAssign names rest
 
-stat = spaces >>
+stat =
     choice [ try assignStat
            , try funCallStat
            , try labelStat
@@ -394,4 +344,4 @@ stat = spaces >>
            , try funAssignStat
            , try localFunAssignStat
            , try localAssignStat
-           ] <* spaces
+           ]
