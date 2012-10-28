@@ -16,6 +16,9 @@ import Text.Parsec.LTok
 import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 
+parseText :: Show a => Parsec [LTok] () a -> String -> IO ()
+parseText p = parseTest p . llex
+
 parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
 parens = between (tok LTokLParen) (tok LTokRParen)
 
@@ -95,13 +98,13 @@ funBody = do
 block :: Parser Block
 block = do
   stats <- many (try stat)
-  ret <- retstat
+  ret <- optionMaybe retstat
   return $ Block stats ret
 
-retstat :: Parser (Maybe [Exp])
+retstat :: Parser [Exp]
 retstat = do
   tok LTokReturn
-  exps <- optionMaybe (exp `sepBy` tok LTokComma)
+  exps <- exp `sepBy` tok LTokComma
   optionMaybe (tok LTokSemic)
   return exps
 
