@@ -9,6 +9,8 @@ import Language.Lua.Token
 
 import Text.Parsec hiding (satisfy)
 
+type Parser = Parsec [LTok] ()
+
 satisfy :: (Stream [LTok] m LTok) => (LTok -> Bool) -> ParsecT [LTok] u m LTok
 satisfy f = tokenPrim show nextPos tokeq
   where nextPos :: SourcePos -> LTok -> [LTok] -> SourcePos
