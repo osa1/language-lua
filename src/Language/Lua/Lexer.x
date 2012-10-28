@@ -1,8 +1,12 @@
 -- TODO:
--- * Multi-line comment and strings
+-- * Multi-line comments and strings
 
 {
-module Language.Lua.Lexer where
+module Language.Lua.Lexer
+  ( llex
+  , LTok
+  , AlexPosn(..)
+  ) where
 
 import Language.Lua.Token
 }
@@ -15,6 +19,7 @@ $eol   = \n                              -- end of line
 $letter   = [a-zA-Z]                     -- first letter of variables
 $identletter = [a-zA-Z_0-9]              -- letters for rest of variables
 
+$bindigit = 0-1                          -- binary digits
 $octdigit = 0-7                          -- octal digits
 $digit    = 0-9                          -- decimal digits
 $hexdigit = [0-9a-fA-F]                  -- hexadecimal digits
@@ -33,6 +38,8 @@ $anyButNL = \0-\255 # \n
 
 @mantpart = (@intpart? \. @fractpart) | @intpart \.
 @exppart  = [eE][\+\-]?@digits
+
+@binexppart = [pP][\+\-]? $bindigit+
 
 @hexprefix = 0x | 0X
 @hexdigits = $hexdigit+
@@ -82,19 +89,20 @@ tokens :-
 
 {
 
-type TokPos = (LToken, AlexPosn)
-type AlexAction = AlexPosn -> String -> TokPos
+type LTok = (LToken, AlexPosn)
+type AlexAction = AlexPosn -> String -> LTok
 
 {-# INLINE ident #-}
 ident :: AlexAction
 ident posn "and"    = (LTokAnd, posn)
 ident posn "break"  = (LTokBreak, posn)
-ident posn "do"     = (LTokDo, posn) 
+ident posn "do"     = (LTokDo, posn)
 ident posn "else"   = (LTokElse, posn)
 ident posn "elseif" = (LTokElseIf, posn)
 ident posn "end"    = (LTokEnd, posn)
 ident posn "false"  = (LTokFalse, posn)
 ident posn "for"    = (LTokFor, posn)
+ident posn "function" = (LTokFunction, posn)
 ident posn "goto"   = (LTokGoto, posn)
 ident posn "if"     = (LTokIf, posn)
 ident posn "in"     = (LTokIn, posn)
@@ -128,10 +136,10 @@ ident posn name     = (LTokIdent name, posn)
 --                AlexSkip  inp' len     -> go inp'
 --                AlexToken inp' len act -> act pos (take len str) : go inp'
 
+llex :: String -> [LTok]
+llex = alexScanTokens
 
 main = do
     s <- getContents
     print (alexScanTokens s)
-
 }
-
