@@ -135,8 +135,7 @@ tableField = choice [ expField
 table :: Parser Table
 table = between (tok LTokLBrace)
                 (tok LTokRBrace)
-                (do fields <- tableField `sepBy` fieldSep
-                    optionMaybe fieldSep
+                (do fields <- tableField `sepEndBy` fieldSep
                     return $ Table fields)
   where fieldSep = tok LTokComma <|> tok LTokSemic
 
