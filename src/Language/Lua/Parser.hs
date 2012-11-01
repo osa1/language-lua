@@ -37,9 +37,9 @@ var = do
         return $ buildVar (Name n') r
       Right e -> do
         (x:xs) <- rest many1
-        case x of
-          (Left e') -> return $ buildVar (Select (Paren e) e') xs
-          (Right n') -> return $ buildVar (SelectName (Paren e) n') xs
+        return $ case x of
+          (Left e')  -> buildVar (Select (Paren e) e') xs
+          (Right n') -> buildVar (SelectName (Paren e) n') xs
 
   where rest c =
           c $ (Left <$> between (tok LTokLBracket) (tok LTokRBracket) exp)
@@ -54,38 +54,34 @@ stringlit :: Parser String
 stringlit = tokenValue <$> string
 
 prefixExp :: Parser PrefixExp
-prefixExp = choice [ Paren <$> parens exp
-                   , PEFunCall <$> try funCall
+prefixExp = choice [ PEFunCall <$> try funCall
+                   , Paren <$> parens exp
                    , PEVar <$> var
                    ]
 
 funCall :: Parser FunCall
 funCall = do
-    prefix <- prefixExp'
-    rest <- many1 argPart
-    let ((methodName, args):rest') = rest
-        firstCall = case methodName of
-                        Nothing -> NormalFunCall prefix args
-                        Just m  -> MethodCall prefix m args
-    return $ buildFunCall firstCall rest'
+    f <- func
+    cs <- calls
+    let pe = case f of
+               Left e  -> Paren e
+               Right s -> PEVar s
+    return $ buildFunCall pe cs
 
-  where methodName :: Parser Name
-        methodName = tok LTokColon >> name
+  where func :: Parser (Either Exp Var)
+        func = (Left <$> parens exp) <|> (Right <$> var)
 
-        argPart :: Parser (Maybe Name, FunArg)
-        argPart = (,) <$> optionMaybe methodName <*> funArg
+        calls :: Parser [(Maybe String, FunArg)]
+        calls = many1 $ do
+          m <- optionMaybe (tok LTokColon >> name)
+          args <- funArg
+          return (m, args)
 
-        prefixExp' :: Parser PrefixExp
-        prefixExp' = choice [ Paren <$> parens exp
-                            , PEVar <$> var
-                            ]
-
-        buildFunCall :: FunCall -> [(Maybe Name, FunArg)] -> FunCall
-        buildFunCall prefix [] = prefix
-        buildFunCall prefix ((methodName, args):xs) =
-            case methodName of
-                Nothing -> buildFunCall (NormalFunCall (PEFunCall prefix) args) xs
-                Just m  -> buildFunCall (MethodCall (PEFunCall prefix) m args) xs
+        buildFunCall :: PrefixExp -> [(Maybe String, FunArg)] -> FunCall
+        buildFunCall pe [(Just n, args)] = MethodCall pe n args
+        buildFunCall pe [(Nothing, args)] = NormalFunCall pe args
+        buildFunCall pe ((Just n, args):xs) = buildFunCall (PEFunCall (MethodCall pe n args)) xs
+        buildFunCall pe ((Nothing, args):xs) = buildFunCall (PEFunCall (NormalFunCall pe args)) xs
 
 funArg :: Parser FunArg
 funArg = tableArg <|> stringArg <|> parlist
