@@ -29,18 +29,32 @@ number :: Parser String
 number = tokenValue <$> anyNum
 
 var :: Parser Var
-var = --choice [ try select, try selectName, name' ]
-      --choice [ try selectName, name' ]
-      choice [ name' ]
-  where select = Select <$> prefixExp <*> exp
-        selectName = SelectName <$> prefixExp <*> name
-        name' = Name <$> name
+var = do
+    n <- (Left <$> name) <|> (Right <$> parens exp)
+    case n of
+      Left n' -> do
+        r <- rest many
+        return $ buildVar (Name n') r
+      Right e -> do
+        (x:xs) <- rest many1
+        case x of
+          (Left e') -> return $ buildVar (Select (Paren e) e') xs
+          (Right n') -> return $ buildVar (SelectName (Paren e) n') xs
+
+  where rest c =
+          c $ (Left <$> between (tok LTokLBracket) (tok LTokRBracket) exp)
+             <|> (Right <$> (tok LTokDot >> name))
+
+        buildVar :: Var -> [Either Exp String] -> Var
+        buildVar var [] = var
+        buildVar var (Left exp:xs) = buildVar (Select (PEVar var) exp) xs
+        buildVar var (Right name:xs) = buildVar (SelectName (PEVar var) name) xs
 
 stringlit :: Parser String
 stringlit = tokenValue <$> string
 
 prefixExp :: Parser PrefixExp
-prefixExp = choice [ Paren <$> (tok LTokLParen >> exp <* tok LTokRParen)
+prefixExp = choice [ Paren <$> parens exp
                    , PEFunCall <$> try funCall
                    , PEVar <$> var
                    ]
