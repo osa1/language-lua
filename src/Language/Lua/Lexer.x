@@ -16,12 +16,11 @@ import Language.Lua.Token
 $space = [ \ \t ]                        -- horizontal white space
 $eol   = \n                              -- end of line
 
-$letter   = [a-zA-Z]                     -- first letter of variables
+$letter      = [a-zA-Z]                  -- first letter of variables
 $identletter = [a-zA-Z_0-9]              -- letters for rest of variables
 
-$bindigit = 0-1                          -- binary digits
-$octdigit = 0-7                          -- octal digits
 $digit    = 0-9                          -- decimal digits
+$octdigit = 0-7                          -- octal digits
 $hexdigit = [0-9a-fA-F]                  -- hexadecimal digits
 
 $instr    = \0-\255 # [ \\ \" \n ]       -- valid character in a string literal
@@ -32,29 +31,29 @@ $anyButNL = \0-\255 # \n
 -- escape characters
 @charesc  = \\ ([ntvbrfaeE\\\?\'\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
 
-@digits = $digit+
-@intpart = @digits
-@fractpart = @digits
+@digits    = $digit+
+@hexdigits = $hexdigit+
 
-@mantpart = (@intpart? \. @fractpart) | @intpart \.
-@exppart  = [eE][\+\-]?@digits
-
-@binexppart = [pP][\+\-]? $bindigit+
+@mantpart = (@digits \. @digits) | @digits \. | \. @digits
+@exppart  = [eE][\+\-]? @digits
 
 @hexprefix = 0x | 0X
-@hexdigits = $hexdigit+
-@hexmant   = @hexdigits? \. @hexdigits | @hexdigits\.
-
+@mantparthex = (@hexdigits \. @hexdigits) | @hexdigits \. | \. @hexdigits
+@expparthex  = [pP][\+\-]? @hexdigits
 
 tokens :-
 
-    $white+ ;
+    $white+  ;
+    "--" [^\n]* ;
 
     $letter $identletter* { ident }
 
-    @hexprefix $hexdigit+ { \posn s -> (LTokNum s, posn) } -- FIXME
-    @mantpart  @exppart?  { \posn s -> (LTokNum s, posn) }
     @digits               { \posn s -> (LTokNum s, posn) }
+    @digits @exppart      { \posn s -> (LTokNum s, posn) }
+    @mantpart @exppart?   { \posn s -> (LTokNum s, posn) }
+    @hexprefix @hexdigits { \posn s -> (LTokNum s, posn) }
+    @hexprefix @hexdigits @expparthex    { \posn s -> (LTokNum s, posn) }
+    @hexprefix @mantparthex @expparthex? { \posn s -> (LTokNum s, posn) }
 
     \"($instr|@charesc)*\" { \posn s -> (LTokSLit s, posn) }
 
