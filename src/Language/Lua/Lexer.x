@@ -29,7 +29,8 @@ $anyButNL = \0-\255 # \n
 @sp = $space*
 
 -- escape characters
-@charesc  = \\ ([ntvbrfaeE\\\?\'\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
+@charescd  = \\ ([ntvbrfaeE\\\?\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
+@charescs  = \\ ([ntvbrfaeE\\\?\'] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -55,7 +56,8 @@ tokens :-
     @hexprefix @hexdigits @expparthex    { \posn s -> (LTokNum s, posn) }
     @hexprefix @mantparthex @expparthex? { \posn s -> (LTokNum s, posn) }
 
-    \"($instr|@charesc)*\" { \posn s -> (LTokSLit s, posn) }
+    \"($instr|@charescd)*\" { \posn s -> (LTokSLit s, posn) }
+    \'($instr|@charescs)*\' { \posn s -> (LTokSLit s, posn) }
 
     "+"   { \posn _ -> (LTokPlus, posn) }
     "-"   { \posn _ -> (LTokMinus, posn) }
