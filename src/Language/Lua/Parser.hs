@@ -199,6 +199,8 @@ opTable = [ [ binary LTokExp       (Binop Exp)    AssocRight ]
             , binary LTokLT        (Binop LT)     AssocLeft
             , binary LTokGEq       (Binop GTE)    AssocLeft
             , binary LTokLEq       (Binop LTE)    AssocLeft
+            , binary LTokNotequal  (Binop NEQ)    AssocLeft
+            , binary LTokEqual     (Binop EQ)     AssocLeft
             ]
           , [ binary LTokAnd       (Binop And)    AssocLeft ]
           , [ binary LTokOr        (Binop Or)     AssocLeft ]
