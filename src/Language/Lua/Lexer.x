@@ -128,17 +128,17 @@ ident posn name     = (LTokIdent name, posn)
 --                  [Byte],       -- rest of the bytes for the current char
 --                  String)       -- current input string
 
---alexScanTokens :: String -> [token]
---alexScanTokens str = go (alexStartPos,'\n',[],str)
---  where go inp@(pos,_,_,str) =
---          case alexScan inp 0 of
---                AlexEOF -> []
---                AlexError ((AlexPn _ line column),_,_,_) -> error $ "lexical error at " ++ (show line) ++ " line, " ++ (show column) ++ " column"
---                AlexSkip  inp' len     -> go inp'
---                AlexToken inp' len act -> act pos (take len str) : go inp'
+alexScanTokens' :: String -> [LTok]
+alexScanTokens' str = go (alexStartPos,'\n',[],str)
+  where go inp@(pos,_,_,str) =
+          case alexScan inp 0 of
+                AlexEOF -> [(LTokEof, pos)]
+                AlexError ((AlexPn _ line column),_,_,_) -> error $ "lexical error at " ++ (show line) ++ " line, " ++ (show column) ++ " column"
+                AlexSkip  inp' len     -> go inp'
+                AlexToken inp' len act -> act pos (take len str) : go inp'
 
 llex :: String -> [LTok]
-llex = alexScanTokens
+llex = alexScanTokens'
 
 main = do
     s <- getContents
