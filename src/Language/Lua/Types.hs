@@ -18,7 +18,7 @@ data Stat
     | If [(Exp, Block)] (Maybe Block) -- ^if .. then .. [elseif ..] [else ..] end
     | ForRange Name Exp Exp (Maybe Exp) Block -- ^for x=start, end [, step] do .. end
     | ForIn [Name] [Exp] Block -- ^for x in .. do .. end
-    | FunAssign Name FunBody -- ^function \<var\> (..) .. end
+    | FunAssign FunName FunBody -- ^function \<var\> (..) .. end
     | LocalFunAssign Name FunBody -- ^local function \<var\> (..) .. end
     | LocalAssign [Name] (Maybe [Exp]) -- ^local var1, var2 .. = exp1, exp2 ..
     | EmptyStat -- ^`,`
@@ -67,6 +67,9 @@ data TableField
 
 -- | A block is list of statements with optional return statement.
 data Block = Block [Stat] (Maybe [Exp]) -- ^list of statements with optional return statement
+    deriving (Show, Eq)
+
+data FunName = FunName Name (Maybe Name) [Name] -- ^method or non-local function name
     deriving (Show, Eq)
 
 data FunDef = FunDef FunBody

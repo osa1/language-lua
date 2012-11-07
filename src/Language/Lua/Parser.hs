@@ -326,9 +326,13 @@ forInStat =
 
 funAssignStat = do
     tok LTokFunction
-    name' <- name
+    name' <- funName
     body <- funBody
     return $ FunAssign name' body
+  where funName :: Parser FunName
+        funName = FunName <$> name
+                          <*> optionMaybe (tok LTokDot >> name)
+                          <*> many (tok LTokColon >> name)
 
 localFunAssignStat = do
     tok LTokLocal
@@ -359,3 +363,6 @@ stat =
            , try localFunAssignStat
            , try localAssignStat
            ]
+
+chunk :: Parser Block
+chunk = block <* tok LTokEof
