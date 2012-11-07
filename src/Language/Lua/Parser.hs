@@ -54,10 +54,9 @@ stringlit :: Parser String
 stringlit = tokenValue <$> string
 
 prefixExp :: Parser PrefixExp
-prefixExp = choice [ PEFunCall <$> try funCall
-                   , Paren <$> parens exp
-                   , PEVar <$> var
-                   ]
+prefixExp = (PEFunCall <$> try funCall)
+        <|> (Paren <$> parens exp)
+        <|> (PEVar <$> var)
 
 funCall :: Parser FunCall
 funCall = do
@@ -119,10 +118,7 @@ retstat = do
   return exps
 
 tableField :: Parser TableField
-tableField = choice [ expField
-                    , try namedField
-                    , field
-                    ]
+tableField = expField <|> try namedField <|> field
   where expField :: Parser TableField
         expField = do
             e1 <- between (tok LTokLBracket)
