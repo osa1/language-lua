@@ -97,7 +97,7 @@ funBody = do
     return $ FunBody params vararg body
 
   where parlist = parens $ do
-          vars <- name `sepBy` (tok LTokComma)
+          vars <- name `sepEndBy` (tok LTokComma)
           vararg <- optionMaybe $ (try $ tok LTokEllipsis) <|> (tok LTokComma)
           return $ case vararg of
                        Nothing -> (vars, False)
