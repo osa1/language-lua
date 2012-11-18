@@ -156,8 +156,8 @@ nilExp, boolExp, numberExp, stringExp, varargExp, fundefExp,
 
 nilExp = tok LTokNil >> return Nil
 
-boolExp = (tok LTokTrue >> return (Bool "true")) <|>
-            (tok LTokFalse >> return (Bool "false"))
+boolExp = (tok LTokTrue >> return (Bool True)) <|>
+            (tok LTokFalse >> return (Bool False))
 
 numberExp = Number <$> number
 

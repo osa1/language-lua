@@ -26,7 +26,7 @@ data Stat
 
 data Exp
     = Nil
-    | Bool String -- ^true, false
+    | Bool Bool -- ^true, false
     | Number String
     | String String
     | Vararg -- ^...

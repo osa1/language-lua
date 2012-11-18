@@ -27,9 +27,13 @@ class LPretty a where
 instance LPretty [Char] where
     pprint _ s = text s
 
+instance LPretty Bool where
+    pprint _ True  = text "true"
+    pprint _ False = text "false"
+
 instance LPretty Exp where
     pprint _ Nil              = text "nil"
-    pprint _ (Bool s)         = text s
+    pprint p (Bool s)         = pprint p s
     pprint _ (Number n)       = text n
     pprint _ (String s)       = dquotes (text s)
     pprint _ Vararg           = text "..."
