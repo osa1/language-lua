@@ -16,8 +16,11 @@ import Text.Parsec.LTok
 import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 
-parseText :: Show a => Parsec [LTok] () a -> String -> IO ()
-parseText p = parseTest p . llex
+parseText :: Parsec [LTok] () a -> String -> a
+parseText p s = let tokens = llex s
+                in case parse p "test" tokens of
+                     Right r  -> r
+                     Left err -> error (show err)
 
 parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
 parens = between (tok LTokLParen) (tok LTokRParen)
