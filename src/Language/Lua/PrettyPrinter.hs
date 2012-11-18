@@ -14,7 +14,7 @@ import Language.Lua.Types
 data Printer = Printer { ident :: Int }
 
 intercalate :: Doc -> [Doc] -> Doc
-intercalate sep elems = hsep (punctuate sep elems)
+intercalate s elems = sep (punctuate s elems)
 
 infixr 5 <$>
 (<$>) :: Doc -> Doc -> Doc
@@ -72,7 +72,7 @@ instance LPretty PrefixExp where
     pprint p (Paren e)           = parens (pprint p e)
 
 instance LPretty Table where
-    pprint p (Table fields) = braces (intercalate comma (map (pprint p) fields))
+    pprint p (Table fields) = braces (nest 4 (cat (punctuate comma (map (pprint p) fields))))
 
 instance LPretty TableField where
     pprint p (ExpField e1 e2)    = brackets (pprint p e1) <+> equals <+> pprint p e2
@@ -84,7 +84,7 @@ instance LPretty Block where
         = (foldr (<$>) empty (map (pprint p) stats)) <$> ret'
       where ret' = case ret of
                      Nothing -> empty
-                     Just e  -> text "return" <+> (intercalate comma (map (pprint p) e))
+                     Just e  -> nest 4 (text "return" </> (intercalate comma (map (pprint p) e)))
 
 instance LPretty FunName where
     pprint p (FunName name s methods) = text name <> s' <> (intercalate colon (map (pprint p) methods))
@@ -96,20 +96,28 @@ instance LPretty FunDef where
     pprint p (FunDef body) = pprint p body
 
 instance LPretty FunBody where
-    pprint p (FunBody args vararg block)
-        =   parens (intercalate comma (map (pprint p) args) <> vararg')
-        <$> indent 4 (pprint p block)
-        <$> text "end"
-      where vararg' = if vararg
-                        then (if null args then empty else comma) <+> text "..."
-                        else empty
+    pprint p funbody = pprintFunction p Nothing funbody
+
+pprintFunction :: Printer -> Maybe Doc -> FunBody -> Doc
+pprintFunction p funname (FunBody args vararg block)
+    = sep [ nest 6 funname'
+          , indent 4 (pprint p block)
+          , text "end"
+          ]
+  where funname' = case funname of
+                     Nothing -> text "function" </> args'
+                     Just n  -> text "function" <+> n </> args'
+        args' = parens (align (cat (punctuate comma (map (pprint p) args) ++ [vararg'])))
+        vararg' = if vararg
+                    then (if null args then empty else comma) <+> text "..."
+                    else empty
 
 instance LPretty FunCall where
     pprint p (NormalFunCall pe arg)     = pprint p pe <> pprint p arg
     pprint p (MethodCall pe method arg) = pprint p pe <> colon <> text method <> pprint p arg
 
 instance LPretty FunArg where
-    pprint p (Args exps)   = parens (intercalate comma (map (pprint p) exps))
+    pprint p (Args exps)   = parens (nest 4 (cat (punctuate (comma <> space) (map (pprint p) exps))))
     pprint p (TableArg t)  = pprint p t
     pprint _ (StringArg s) = dquotes (text s)
 
@@ -124,11 +132,11 @@ instance LPretty Stat where
     pprint p (Goto name)       = text "goto" <+> text name
     pprint p (Do block)        = text "do" <$> indent 4 (pprint p block) </> text "end"
     pprint p (While guard e)
-        =   text "while" <+> pprint p guard
-        <$> indent 4 (pprint p e)
-        <$> text "end"
+        =  (nest 4 (text "while" <+> pprint p guard <+> text "do"
+                   </> indent 4 (pprint p e)))
+       </> text "end"
     pprint p (Repeat block guard)
-        = text "repeat" <+> pprint p block <+> text "until" <+> pprint p guard
+        = nest 4 (text "repeat" </> pprint p block) </> (nest 4 (text "until" </> pprint p guard))
 
     pprint p (If cases elsePart) = printIf cases elsePart
       where printIf ((guard, block):xs) e
@@ -159,8 +167,8 @@ instance LPretty Stat where
         <$> indent 4 (pprint p block)
         <$> text "end"
 
-    pprint p (FunAssign name body) = text "function" <+> pprint p name <+> pprint p body
-    pprint p (LocalFunAssign name body) = text "local function" <+> text name <+> pprint p body
+    pprint p (FunAssign name body) = pprintFunction p (Just (pprint p name)) body
+    pprint p (LocalFunAssign name body) = text "local" <+> pprintFunction p (Just (pprint p name)) body
     pprint p (LocalAssign names exps)
         = text "local" <+> (intercalate comma (map (pprint p) names)) <+> equals <+> exps'
       where exps' = case exps of
