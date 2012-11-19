@@ -15,6 +15,7 @@ import Text.Parsec hiding (string)
 import Text.Parsec.LTok
 import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
+import Control.Monad (void)
 
 parseText :: Parsec [LTok] () a -> String -> a
 parseText p s = let tokens = llex s
@@ -89,7 +90,7 @@ funArg :: Parser FunArg
 funArg = tableArg <|> stringArg <|> parlist
   where tableArg = TableArg <$> table
         stringArg = StringArg <$> stringlit
-        parlist = parens (do exps <- exp `sepBy` (tok LTokComma)
+        parlist = parens (do exps <- exp `sepBy` tok LTokComma
                              return $ Args exps)
 
 funBody :: Parser FunBody
@@ -100,8 +101,8 @@ funBody = do
     return $ FunBody params vararg body
 
   where parlist = parens $ do
-          vars <- name `sepEndBy` (tok LTokComma)
-          vararg <- optionMaybe $ (try $ tok LTokEllipsis) <|> (tok LTokComma)
+          vars <- name `sepEndBy` tok LTokComma
+          vararg <- optionMaybe $ try (tok LTokEllipsis) <|> tok LTokComma
           return $ case vararg of
                        Nothing -> (vars, False)
                        Just LTokEllipsis -> (vars, True)
@@ -175,7 +176,7 @@ prefixexpExp = PrefixExp <$> prefixExp
 tableconstExp = TableConst <$> table
 
 binary :: Monad m => LToken -> (a -> a -> a) -> Assoc -> Operator [LTok] u m a
-binary op fun assoc = Infix (tok op >> return fun) assoc
+binary op fun = Infix (tok op >> return fun)
 
 prefix :: Monad m => LToken -> (a -> a) -> Operator [LTok] u m a
 prefix op fun       = Prefix (tok op >> return fun)
@@ -240,7 +241,7 @@ assignStat, funCallStat, labelStat, breakStat, gotoStat,
     forInStat, funAssignStat, localFunAssignStat, localAssignStat, stat :: Parser Stat
 
 emptyStat :: Parser ()
-emptyStat = optionMaybe (tok LTokSemic) >> return ()
+emptyStat = void (tok LTokSemic)
 
 assignStat = do
     vars <- var `sepBy` tok LTokComma
@@ -343,7 +344,7 @@ localFunAssignStat = do
 localAssignStat = do
     tok LTokLocal
     names <- name `sepBy` tok LTokComma
-    rest <- optionMaybe $ (tok LTokAssign) >> exp `sepBy` (tok LTokComma)
+    rest <- optionMaybe $ tok LTokAssign >> exp `sepBy` tok LTokComma
     return $ LocalAssign names rest
 
 stat =

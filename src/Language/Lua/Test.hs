@@ -16,7 +16,7 @@ newtype LuaString = LuaString { unwrapLuaString :: String }
 
 -- FIXME: either fix this or implement separate lexer tests
 instance Arbitrary LuaString where
-    arbitrary = LuaString <$> (listOf1 (elements ['a'..'z']))
+    arbitrary = LuaString <$> listOf1 (elements ['a'..'z'])
 
 arbitraryLuaStringList :: Gen [String]
 arbitraryLuaStringList = liftA unwrapLuaString <$> listOf1 arbitrary
@@ -49,7 +49,7 @@ instance Arbitrary Exp where
     arbitrary = oneof [ return Nil
                       , Bool <$> arbitrary
                       , Number <$> listOf1 (elements ['0'..'9']) -- TODO: implement number lexer tests
-                      , String <$> liftA ((++) "\"") (liftA ((:) '"') arbitrary)
+                      , String <$> liftA ("\"" ++) (liftA ((:) '"') arbitraryLuaString)
                       , return Vararg
                       , EFunDef <$> arbitrary
                       , PrefixExp <$> arbitrary
@@ -89,7 +89,8 @@ instance Arbitrary TableField where
                       ]
 
 instance Arbitrary Block where
-    arbitrary = Block <$> arbitrary <*> arbitrary
+    arbitrary = Block <$> arbitrary <*> suchThat arbitrary (\a -> case a of Nothing -> True
+                                                                            Just l -> not (null l))
 
 instance Arbitrary FunName where
     arbitrary = FunName <$> arbitraryLuaString <*> arbitraryLuaStringMaybe <*> arbitraryLuaStringList
