@@ -1,7 +1,5 @@
-{-# OPTIONS_GHC -Wall
-                -fno-warn-hi-shadowing
-                -fno-warn-name-shadowing
-                -fno-warn-unused-do-bind #-}
+{-# OPTIONS_GHC -Wall #-}
+-- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
 module Language.Lua.Types where
 
 type Name = String
@@ -21,26 +19,26 @@ data Stat
     | FunAssign FunName FunBody -- ^function \<var\> (..) .. end
     | LocalFunAssign Name FunBody -- ^local function \<var\> (..) .. end
     | LocalAssign [Name] (Maybe [Exp]) -- ^local var1, var2 .. = exp1, exp2 ..
-    | EmptyStat -- ^`,`
+    | EmptyStat -- ^/;/
     deriving (Show, Eq)
 
 data Exp
     = Nil
-    | Bool Bool -- ^true, false
+    | Bool Bool
     | Number String
     | String String
-    | Vararg -- ^...
-    | EFunDef FunDef -- ^function (..) .. end
-    | PrefixExp PrefixExp -- ^variable, function call, or parenthesized expression
+    | Vararg -- ^/.../
+    | EFunDef FunDef -- ^/function (..) .. end/
+    | PrefixExp PrefixExp
     | TableConst Table -- ^table constructor
-    | Binop Binop Exp Exp -- ^binary operations, + - * / ^ % .. \< \<= \> \>= == ~= and or
-    | Unop Unop Exp -- ^unary operations, - not #
+    | Binop Binop Exp Exp -- ^binary operators, /+ - * ^ % .. < <= > >= == ~= and or/
+    | Unop Unop Exp -- ^unary operators, /- not #/
     deriving (Show, Eq)
 
 data Var
     = Name Name -- ^variable
-    | Select PrefixExp Exp -- ^table[exp]
-    | SelectName PrefixExp Name -- ^table.variable
+    | Select PrefixExp Exp -- ^/table[exp]/
+    | SelectName PrefixExp Name -- ^/table.variable/
     deriving (Show, Eq)
 
 data Binop = Add | Sub | Mul | Div | Exp | Mod | Concat
@@ -60,27 +58,27 @@ data Table = Table [TableField] -- ^list of table fields
     deriving (Show, Eq)
 
 data TableField
-    = ExpField Exp Exp -- ^\[exp\] = exp
-    | NamedField Name Exp -- ^name = exp
-    | Field Exp -- ^exp
+    = ExpField Exp Exp -- ^/[exp] = exp/
+    | NamedField Name Exp -- ^/name = exp/
+    | Field Exp
     deriving (Show, Eq)
 
 -- | A block is list of statements with optional return statement.
-data Block = Block [Stat] (Maybe [Exp]) -- ^list of statements with optional return statement
+data Block = Block [Stat] (Maybe [Exp])
     deriving (Show, Eq)
 
-data FunName = FunName Name (Maybe Name) [Name] -- ^method or non-local function name
+data FunName = FunName Name (Maybe Name) [Name]
     deriving (Show, Eq)
 
 data FunDef = FunDef FunBody
     deriving (Show, Eq)
 
-data FunBody = FunBody [Name] Bool Block -- ^args, vararg predicate, block
+data FunBody = FunBody [Name] Bool Block -- ^(args, vararg predicate, block)
     deriving (Show, Eq)
 
 data FunCall
-    = NormalFunCall PrefixExp FunArg -- ^prefixexp ( funarg )
-    | MethodCall PrefixExp Name FunArg -- ^prefixexp : name ( funarg )
+    = NormalFunCall PrefixExp FunArg -- ^/prefixexp ( funarg )/
+    | MethodCall PrefixExp Name FunArg -- ^/prefixexp : name ( funarg )/
     deriving (Show, Eq)
 
 data FunArg
