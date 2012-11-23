@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts, NoMonomorphismRestriction #-}
 {-# OPTIONS_GHC -Wall
                 -fno-warn-hi-shadowing
                 -fno-warn-name-shadowing
@@ -16,6 +15,9 @@ import Text.Parsec.LTok
 import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 import Control.Monad (void)
+
+--parseText :: Parsec [LTok] () a -> String -> Either ParseError a
+--parseText p s = parse p "test" (llex s)
 
 parseText :: Parsec [LTok] () a -> String -> a
 parseText p s = let tokens = llex s
@@ -216,10 +218,8 @@ exp =
            , try stringExp
            , try varargExp
            , try fundefExp
-           , try prefixexpExp -- stucks in a loop
+           , try prefixexpExp
            , try tableconstExp
-           --, binopExp
-           --, unopExp
            ]
 
 exp' =
