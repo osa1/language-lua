@@ -90,6 +90,7 @@ tokens :-
 
 {
 
+-- | Lua token with position information.
 type LTok = (LToken, AlexPosn)
 type AlexAction = AlexPosn -> String -> LTok
 
@@ -137,6 +138,7 @@ alexScanTokens' str = go (alexStartPos,'\n',[],str)
                 AlexSkip  inp' len     -> go inp'
                 AlexToken inp' len act -> act pos (take len str) : go inp'
 
+-- | Lua lexer.
 llex :: String -> [LTok]
 llex = alexScanTokens'
 
