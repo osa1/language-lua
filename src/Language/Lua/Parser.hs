@@ -16,14 +16,8 @@ import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 import Control.Monad (void)
 
---parseText :: Parsec [LTok] () a -> String -> Either ParseError a
---parseText p s = parse p "test" (llex s)
-
-parseText :: Parsec [LTok] () a -> String -> a
-parseText p s = let tokens = llex s
-                in case parse p "test" tokens of
-                     Right r  -> r
-                     Left err -> error (show err)
+parseText :: Parsec [LTok] () a -> String -> Either ParseError a
+parseText p s = parse p "test" (llex s)
 
 parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
 parens = between (tok LTokLParen) (tok LTokRParen)
