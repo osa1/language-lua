@@ -34,35 +34,55 @@ name = tokenValue <$> anyIdent
 number :: Parser String
 number = tokenValue <$> anyNum
 
+-------------------------------------------------------------------
+-- var parser
+
 var :: Parser Var
-var = do
-    n <- (Left <$> name) <|> (Right <$> parens exp)
-    case n of
-      Left n' -> do
-        r <- rest many
-        return $ buildVar (Name n') r
-      Right e -> do
-        (x:xs) <- rest many1
-        return $ case x of
-          (Left e')  -> buildVar (Select (Paren e) e') xs
-          (Right n') -> buildVar (SelectName (Paren e) n') xs
+var = funvar <|> var'
+  where funvar = do
+          fc <- funCall
+          (x:xs) <- rest many1
+          return $ case x of
+            Left e -> buildVar (Select (PEFunCall fc) e) xs
+            Right n -> buildVar (SelectName (PEFunCall fc) n) xs
 
-  where rest c =
-          c $ (Left <$> between (tok LTokLBracket) (tok LTokRBracket) exp)
-             <|> (Right <$> (tok LTokDot >> name))
+-- this is used to eliminate left recursion.
+var' :: Parser Var
+var' = namevar <|> parenvar
+  where namevar = do
+          n <- name
+          r <- rest many
+          return $ buildVar (Name n) r
 
-        buildVar :: Var -> [Either Exp String] -> Var
-        buildVar var [] = var
-        buildVar var (Left exp:xs) = buildVar (Select (PEVar var) exp) xs
-        buildVar var (Right name:xs) = buildVar (SelectName (PEVar var) name) xs
+        parenvar = do
+          n <- parens exp
+          (x:xs) <- rest many1
+          return $ case x of
+            Left e -> buildVar (Select (Paren n) e) xs
+            Right n' -> buildVar (SelectName (Paren n) n') xs
+
+rest :: (Parser (Either Exp Name) -> Parser [Either Exp Name]) -> Parser [Either Exp Name]
+rest c =
+  c $ (Left <$> between (tok LTokLBracket) (tok LTokRBracket) exp)
+     <|> (Right <$> (tok LTokDot >> name))
+
+buildVar :: Var -> [Either Exp String] -> Var
+buildVar var [] = var
+buildVar var (Left exp:xs) = buildVar (Select (PEVar var) exp) xs
+buildVar var (Right name:xs) = buildVar (SelectName (PEVar var) name) xs
+
+-------------------------------------------------------------------
 
 stringlit :: Parser String
 stringlit = tokenValue <$> string
 
 prefixExp :: Parser PrefixExp
-prefixExp = (PEFunCall <$> try funCall)
-        <|> (Paren <$> parens exp)
-        <|> (PEVar <$> var)
+--prefixExp = (PEFunCall <$> try funCall)
+--        <|> (Paren <$> parens exp)
+--        <|> (PEVar <$> var)
+prefixExp = (Paren <$> parens exp)
+        <|> (PEVar <$> try var)
+        <|> (PEFunCall <$> funCall)
 
 funCall :: Parser FunCall
 funCall = do
@@ -74,7 +94,7 @@ funCall = do
     return $ buildFunCall pe cs
 
   where func :: Parser (Either Exp Var)
-        func = (Left <$> parens exp) <|> (Right <$> var)
+        func = (Left <$> parens exp) <|> (Right <$> var')
 
         calls :: Parser [(Maybe String, FunArg)]
         calls = many1 $ do
