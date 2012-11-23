@@ -23,6 +23,7 @@ Library
                      Language.Lua.Parser,
                      Language.Lua.Lexer,
                      Language.Lua.PrettyPrinter
+                     Text.Parsec.LTok
   --Ghc-options:       -O2
   Build-depends:     base >= 4.5 && < 4.6,
                      mtl >= 2.0 && < 2.1,
