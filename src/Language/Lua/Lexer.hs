@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-{-# LINE 4 "src/Language/Lua/Lexer.x" #-}
+{-# LINE 4 "Language/Lua/Lexer.x" #-}
 
 module Language.Lua.Lexer
   ( llex
@@ -181,7 +181,7 @@ alex_deflt :: Array Int Int
 alex_deflt = listArray (0,71) [-1,-1,-1,-1,-1,-1,15,15,1,-1,1,17,-1,-1,17,30,30,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,32,32,32,-1,32,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 
 alex_accept = listArray (0::Int,71) [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[(AlexAccSkip)],[(AlexAccSkip)],[(AlexAcc (alex_action_2))],[(AlexAcc (alex_action_3))],[(AlexAcc (alex_action_3))],[(AlexAcc (alex_action_4))],[(AlexAcc (alex_action_5))],[(AlexAcc (alex_action_5))],[(AlexAcc (alex_action_6))],[(AlexAcc (alex_action_7))],[(AlexAcc (alex_action_8))],[(AlexAcc (alex_action_8))],[(AlexAcc (alex_action_9))],[(AlexAcc (alex_action_10))],[(AlexAcc (alex_action_11))],[(AlexAcc (alex_action_12))],[(AlexAcc (alex_action_13))],[(AlexAcc (alex_action_14))],[(AlexAcc (alex_action_15))],[(AlexAcc (alex_action_16))],[(AlexAcc (alex_action_17))],[(AlexAcc (alex_action_18))],[(AlexAcc (alex_action_19))],[(AlexAcc (alex_action_20))],[(AlexAcc (alex_action_21))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_23))],[(AlexAcc (alex_action_24))],[(AlexAcc (alex_action_25))],[(AlexAcc (alex_action_26))],[(AlexAcc (alex_action_27))],[(AlexAcc (alex_action_28))],[(AlexAcc (alex_action_29))],[(AlexAcc (alex_action_30))],[(AlexAcc (alex_action_31))],[(AlexAcc (alex_action_32))],[(AlexAcc (alex_action_33))],[(AlexAcc (alex_action_34))],[(AlexAcc (alex_action_35))],[(AlexAcc (alex_action_36))],[(AlexAcc (alex_action_37))]]
-{-# LINE 91 "src/Language/Lua/Lexer.x" #-}
+{-# LINE 91 "Language/Lua/Lexer.x" #-}
 
 
 -- | Lua token with position information.
@@ -247,8 +247,8 @@ alex_action_5 =  \posn s -> (LTokNum s, posn)
 alex_action_6 =  \posn s -> (LTokNum s, posn) 
 alex_action_7 =  \posn s -> (LTokNum s, posn) 
 alex_action_8 =  \posn s -> (LTokNum s, posn) 
-alex_action_9 =  \posn s -> (LTokSLit s, posn) 
-alex_action_10 =  \posn s -> (LTokSLit s, posn) 
+alex_action_9 =  \posn s -> (LTokSLit (tail . init $ s), posn) 
+alex_action_10 =  \posn s -> (LTokSLit (tail . init $ s), posn) 
 alex_action_11 =  \posn _ -> (LTokPlus, posn) 
 alex_action_12 =  \posn _ -> (LTokMinus, posn) 
 alex_action_13 =  \posn _ -> (LTokStar, posn) 

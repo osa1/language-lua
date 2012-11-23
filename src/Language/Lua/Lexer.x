@@ -56,8 +56,8 @@ tokens :-
     @hexprefix @hexdigits @expparthex    { \posn s -> (LTokNum s, posn) }
     @hexprefix @mantparthex @expparthex? { \posn s -> (LTokNum s, posn) }
 
-    \"($instr|@charescd)*\" { \posn s -> (LTokSLit s, posn) }
-    \'($instr|@charescs)*\' { \posn s -> (LTokSLit s, posn) }
+    \"($instr|@charescd)*\" { \posn s -> (LTokSLit (tail . init $ s), posn) }
+    \'($instr|@charescs)*\' { \posn s -> (LTokSLit (tail . init $ s), posn) }
 
     "+"   { \posn _ -> (LTokPlus, posn) }
     "-"   { \posn _ -> (LTokMinus, posn) }
