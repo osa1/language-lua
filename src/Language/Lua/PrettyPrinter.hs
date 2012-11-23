@@ -4,7 +4,7 @@
                 -fno-warn-unused-do-bind #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Language.Lua.PrettyPrinter where
+module Language.Lua.PrettyPrinter (pprint, Printer(..)) where
 
 import Prelude hiding (EQ, GT, LT)
 import Text.PrettyPrint.Leijen hiding ((<$>))
@@ -46,7 +46,7 @@ instance LPretty Exp where
 instance LPretty Var where
     pprint _ (Name n)             = text n
     pprint p (Select pe e)        = pprint p pe <> brackets (pprint p e)
-    pprint p (SelectName pe name) = pprint p pe <> char '.' <> pprint p name
+    pprint p (SelectName pe name) = group (pprint p pe <$$> (char '.' <> pprint p name))
 
 instance LPretty Binop where
     pprint _ Add    = char '+'
@@ -85,10 +85,12 @@ instance LPretty TableField where
 
 instance LPretty Block where
     pprint p (Block stats ret)
-        = (foldr (<$>) empty (map (pprint p) stats)) <$> ret'
+        = case stats of
+            [] -> ret'
+            _  -> (foldr (<$>) empty (map (pprint p) stats)) <$> ret'
       where ret' = case ret of
                      Nothing -> empty
-                     Just e  -> nest 4 (text "return" </> (intercalate comma (map (pprint p) e)))
+                     Just e  -> nest 2 (text "return" </> (intercalate comma (map (pprint p) e)))
 
 instance LPretty FunName where
     pprint p (FunName name s methods) = text name <> s' <> (intercalate colon (map (pprint p) methods))
@@ -104,21 +106,18 @@ instance LPretty FunBody where
 
 pprintFunction :: Printer -> Maybe Doc -> FunBody -> Doc
 pprintFunction p funname (FunBody args vararg block)
-    = sep [ nest 6 funname'
-          , indent 4 (pprint p block)
-          , text "end"
-          ]
-  where funname' = case funname of
-                     Nothing -> text "function" </> args'
-                     Just n  -> text "function" <+> n </> args'
-        args' = parens (align (cat (punctuate comma (map (pprint p) args) ++ [vararg'])))
-        vararg' = if vararg
-                    then (if null args then empty else comma) <+> text "..."
-                    else empty
+    = group (nest 4 (funhead <$> funbody) <$> end)
+  where funhead = case funname of
+                    Nothing -> nest 2 (text "function" </> args')
+                    Just n  -> nest 2 (text "function" </> n </> args')
+        args' = parens (align (cat (punctuate (comma <> space)
+                                        (map (pprint p) (args ++ if vararg then ["..."] else [])))))
+        funbody = pprint p block
+        end = text "end"
 
 instance LPretty FunCall where
-    pprint p (NormalFunCall pe arg)     = pprint p pe <> pprint p arg
-    pprint p (MethodCall pe method arg) = pprint p pe <> colon <> text method <> pprint p arg
+    pprint p (NormalFunCall pe arg)     = group (nest 4 (pprint p pe <$$> pprint p arg))
+    pprint p (MethodCall pe method arg) = group (nest 4 (pprint p pe <$$> (colon <> text method) <$$> pprint p arg))
 
 instance LPretty FunArg where
     pprint p (Args exps)   = parens (nest 4 (cat (punctuate (comma <> space) (map (pprint p) exps))))
@@ -134,7 +133,7 @@ instance LPretty Stat where
     pprint p (Label name)      = text ":::" <> text name <> text ":::"
     pprint p Break             = text "break"
     pprint p (Goto name)       = text "goto" <+> text name
-    pprint p (Do block)        = text "do" <$> indent 4 (pprint p block) </> text "end"
+    pprint p (Do block)        = group (nest 4 (text "do" <$> pprint p block) <$> text "end")
     pprint p (While guard e)
         =  (nest 4 (text "while" <+> pprint p guard <+> text "do"
                    </> indent 4 (pprint p e)))
@@ -142,19 +141,18 @@ instance LPretty Stat where
     pprint p (Repeat block guard)
         = nest 4 (text "repeat" </> pprint p block) </> (nest 4 (text "until" </> pprint p guard))
 
-    pprint p (If cases elsePart) = printIf cases elsePart
+    pprint p (If cases elsePart) = group (printIf cases elsePart)
       where printIf ((guard, block):xs) e
-                =   text "if" <+> pprint p guard <+> text "then"
-                <$> indent 4 (pprint p block)
+                =   group (nest 4 (text "if" <+> pprint p guard <+> text "then"
+                        <$> pprint p block))
                 <$> printIf' p xs e
 
             printIf' p [] Nothing  = text "end"
-            printIf' p [] (Just b) =   text "else"
-                                   <$> indent 4 (pprint p b)
-                                   <$> text "end"
+            printIf' p [] (Just b) = group (nest 4 (text "else" </> pprint p b)
+                                         <$> text "end")
             printIf' p ((guard, block):xs) e
-                =   text "elseif" <+> pprint p guard <+> text "then"
-                <$> indent 4 (pprint p block)
+                =   group (nest 4 (text "elseif" <+> pprint p guard <+> text "then"
+                        <$> pprint p block))
                 <$> printIf' p xs e
 
     pprint p (ForRange name e1 e2 e3 block)
