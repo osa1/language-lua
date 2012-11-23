@@ -194,15 +194,20 @@ tableconstExp = TableConst <$> table
 binary :: Monad m => LToken -> (a -> a -> a) -> Assoc -> Operator [LTok] u m a
 binary op fun = Infix (tok op >> return fun)
 
-prefix :: Monad m => LToken -> (a -> a) -> Operator [LTok] u m a
-prefix op fun       = Prefix (tok op >> return fun)
+--prefix :: Monad m => LToken -> (a -> a) -> Operator [LTok] u m a
+--prefix op fun       = Prefix (tok op >> return fun)
+
+prefixOp :: Parser Exp
+prefixOp =  (tok LTokNot   >> exp >>= return . Unop Not)
+        <|> (tok LTokSh    >> exp >>= return . Unop Len)
+        <|> (tok LTokMinus >> exp >>= return . Unop Neg)
 
 opTable :: Monad m => [[Operator [LTok] u m Exp]]
 opTable = [ [ binary LTokExp       (Binop Exp)    AssocRight ]
-          , [ prefix LTokNot       (Unop Not)
-            , prefix LTokSh        (Unop Len)
-            , prefix LTokMinus     (Unop Neg)
-            ]
+          --, [ prefix LTokNot       (Unop Not)
+          --  , prefix LTokSh        (Unop Len)
+          --  , prefix LTokMinus     (Unop Neg)
+          --  ]
           , [ binary LTokStar      (Binop Mul)    AssocLeft
             , binary LTokSlash     (Binop Div)    AssocLeft
             , binary LTokPercent   (Binop Mod)    AssocLeft
@@ -226,6 +231,7 @@ opExp = buildExpressionParser opTable exp' <?> "opExp"
 
 exp =
     choice [ try opExp
+           , try prefixOp
            , try nilExp
            , try boolExp
            , try numberExp
@@ -237,7 +243,8 @@ exp =
            ]
 
 exp' =
-    choice [ try nilExp
+    choice [ try prefixOp
+           , try nilExp
            , try boolExp
            , try numberExp
            , try stringExp
