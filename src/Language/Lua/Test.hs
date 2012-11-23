@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall
+                -fno-warn-orphans #-}
 module Langauge.Lua.Test where
 
 import Prelude hiding (EQ, LT, GT)
@@ -8,9 +10,27 @@ import Control.Applicative
 import qualified Language.Lua.Parser as P
 import qualified Language.Lua.PrettyPrinter as PP
 import qualified Language.Lua.Lexer as L
+import Text.Parsec
 import Language.Lua.Types
 
 -- sample (liftA (P.parseText P.block) (liftA show (liftA (PP.pprint undefined) (arbitrary :: Gen Block))))
+
+instance Eq ParseError where
+  _ == _ = False
+
+instance Testable Block where
+    property b = forAll arbitrary checkTree
+
+checkTree :: Block -> Bool
+checkTree tree =
+  let code = PP.pprint undefined tree
+      parseResult = P.parseText P.chunk (show code)
+  in parseResult == Right tree
+
+runQuickCheck :: IO Result
+runQuickCheck = quickCheckWithResult
+                  stdArgs{maxSuccess=100, maxDiscardRatio=1, maxSize=1, chatty=True}
+                  (property :: Block -> Property)
 
 newtype LuaString = LuaString { unwrapLuaString :: String }
 
@@ -49,7 +69,7 @@ instance Arbitrary Exp where
     arbitrary = oneof [ return Nil
                       , Bool <$> arbitrary
                       , Number <$> listOf1 (elements ['0'..'9']) -- TODO: implement number lexer tests
-                      , String <$> liftA ("\"" ++) (liftA ((:) '"') arbitraryLuaString)
+                      , String <$> arbitraryLuaString
                       , return Vararg
                       , EFunDef <$> arbitrary
                       , PrefixExp <$> arbitrary
