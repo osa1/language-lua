@@ -67,7 +67,7 @@ instance LPretty Binop where
 
 instance LPretty Unop where
     pprint _ Neg = char '-'
-    pprint _ Not = text "not"
+    pprint _ Not = text "not "
     pprint _ Len = char '#'
 
 instance LPretty PrefixExp where
@@ -130,7 +130,7 @@ instance LPretty Stat where
         <+> equals
         <+> (intercalate comma (map (pprint p) vals))
     pprint p (FunCall funcall) = pprint p funcall
-    pprint p (Label name)      = text ":::" <> text name <> text ":::"
+    pprint p (Label name)      = text "::" <> text name <> text "::"
     pprint p Break             = text "break"
     pprint p (Goto name)       = text "goto" <+> text name
     pprint p (Do block)        = group (nest 4 (text "do" <$> pprint p block) <$> text "end")
