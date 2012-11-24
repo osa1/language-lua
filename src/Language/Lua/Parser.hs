@@ -22,6 +22,9 @@ parseText p s = parse p "test" (llex s)
 parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
 parens = between (tok LTokLParen) (tok LTokRParen)
 
+brackets :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
+brackets = between (tok LTokLBracket) (tok LTokRBracket)
+
 name :: Parser String
 name = tokenValue <$> anyIdent
 
@@ -54,10 +57,7 @@ suffixedExp = SuffixedExp <$> primaryExp <*> many suffixExp
 suffixExp :: Parser SuffixExp
 suffixExp = selectName <|> selectExp <|> selectMethod <|> funarg
   where selectName = SSelect <$> (tok LTokDot >> name)
-        selectExp = SSelectExp <$>
-                      between (tok LTokLBracket)
-                              (tok LTokRBracket)
-                              exp
+        selectExp = SSelectExp <$> brackets exp
         selectMethod = tok LTokColon >> (SSelectMethod <$> name <*> funArg)
         funarg = SFunCall <$> funArg
 
@@ -147,9 +147,7 @@ tableField :: Parser TableField
 tableField = expField <|> try namedField <|> field
   where expField :: Parser TableField
         expField = do
-            e1 <- between (tok LTokLBracket)
-                          (tok LTokRBracket)
-                          exp
+            e1 <- brackets exp
             tok LTokAssign
             e2 <- exp
             return $ ExpField e1 e2
