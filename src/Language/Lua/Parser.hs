@@ -61,10 +61,10 @@ suffixedExp = SuffixedExp <$> primaryExp <*> many suffixExp
 
 suffixExp :: Parser SuffixExp
 suffixExp = selectName <|> selectExp <|> selectMethod <|> funarg
-  where selectName = SSelect <$> (tok LTokDot >> name)
-        selectExp = SSelectExp <$> brackets exp
+  where selectName   = SSelect <$> (tok LTokDot >> name)
+        selectExp    = SSelectExp <$> brackets exp
         selectMethod = tok LTokColon >> (SSelectMethod <$> name <*> funArg)
-        funarg = SFunCall <$> funArg
+        funarg       = SFunCall <$> funArg
 
 sexpToPexp :: SuffixedExp -> PrefixExp
 sexpToPexp (SuffixedExp t r) = case r of
@@ -87,22 +87,17 @@ sexpToPexp (SuffixedExp t r) = case r of
         iter (SFunCall args:xs) pe            = iter xs (PEFunCall (NormalFunCall pe args))
 
 sexpToVar :: SuffixedExp -> Var
-sexpToVar sexp@(SuffixedExp prim sfs) =
-  case last sfs of
-    SSelectMethod{} -> undefined
-    SFunCall{} -> undefined
-    _ -> case sexpToPexp sexp of
-           PEVar var -> var
-           _ -> undefined
+sexpToVar (SuffixedExp (PName name) []) = Name name
+sexpToVar (SuffixedExp _ []) = undefined
+sexpToVar sexp = case sexpToPexp sexp of
+                   PEVar var -> var
+                   _ -> undefined
 
 sexpToFunCall :: SuffixedExp -> FunCall
-sexpToFunCall sexp@(SuffixedExp prim sfs) =
-  case last sfs of
-    SSelect{} -> undefined
-    SSelectExp{} -> undefined
-    _ -> case sexpToPexp sexp of
-           PEFunCall funcall -> funcall
-           _ -> undefined
+sexpToFunCall (SuffixedExp _ []) = undefined
+sexpToFunCall sexp = case sexpToPexp sexp of
+                       PEFunCall funcall -> funcall
+                       _ -> undefined
 
 var :: Parser Var
 var = liftM sexpToVar suffixedExp
@@ -129,7 +124,7 @@ funBody = do
 
   where parlist = parens $ do
           vars <- name `sepEndBy` tok LTokComma
-          vararg <- optionMaybe $ try (tok LTokEllipsis) <|> tok LTokComma
+          vararg <- optionMaybe (tok LTokEllipsis <|> tok LTokComma)
           return $ case vararg of
                        Nothing -> (vars, False)
                        Just LTokEllipsis -> (vars, True)
@@ -137,7 +132,7 @@ funBody = do
 
 block :: Parser Block
 block = do
-  stats <- many (try stat)
+  stats <- many stat
   ret <- optionMaybe retstat
   return $ Block stats ret
 
@@ -149,7 +144,7 @@ retstat = do
   return exps
 
 tableField :: Parser TableField
-tableField = expField <|> try namedField <|> field
+tableField = expField <|> namedField <|> field
   where expField :: Parser TableField
         expField = do
             e1 <- brackets exp
@@ -203,20 +198,15 @@ tableconstExp = TableConst <$> table
 binary :: Monad m => LToken -> (a -> a -> a) -> Assoc -> Operator [LTok] u m a
 binary op fun = Infix (tok op >> return fun)
 
---prefix :: Monad m => LToken -> (a -> a) -> Operator [LTok] u m a
---prefix op fun       = Prefix (tok op >> return fun)
-
-prefixOp :: Parser Exp
-prefixOp =  (tok LTokNot   >> exp >>= return . Unop Not)
-        <|> (tok LTokSh    >> exp >>= return . Unop Len)
-        <|> (tok LTokMinus >> exp >>= return . Unop Neg)
+prefix :: Monad m => LToken -> (a -> a) -> Operator [LTok] u m a
+prefix op fun = Prefix (tok op >> return fun)
 
 opTable :: Monad m => [[Operator [LTok] u m Exp]]
 opTable = [ [ binary LTokExp       (Binop Exp)    AssocRight ]
-          --, [ prefix LTokNot       (Unop Not)
-          --  , prefix LTokSh        (Unop Len)
-          --  , prefix LTokMinus     (Unop Neg)
-          --  ]
+          , [ prefix LTokNot       (Unop Not)
+            , prefix LTokSh        (Unop Len)
+            , prefix LTokMinus     (Unop Neg)
+            ]
           , [ binary LTokStar      (Binop Mul)    AssocLeft
             , binary LTokSlash     (Binop Div)    AssocLeft
             , binary LTokPercent   (Binop Mod)    AssocLeft
@@ -238,30 +228,11 @@ opTable = [ [ binary LTokExp       (Binop Exp)    AssocRight ]
 
 opExp = buildExpressionParser opTable exp' <?> "opExp"
 
-exp =
-  choice [ try opExp
-         , try prefixOp
-         , try nilExp
-         , try boolExp
-         , try numberExp
-         , try stringExp
-         , try varargExp
-         , try fundefExp
-         , try prefixexpExp
-         , try tableconstExp
-         ]
+exp' = choice [ nilExp, boolExp, numberExp, stringExp, varargExp,
+                fundefExp, prefixexpExp, tableconstExp ]
 
-exp' =
-  choice [ try prefixOp
-         , try nilExp
-         , try boolExp
-         , try numberExp
-         , try stringExp
-         , try varargExp
-         , try fundefExp
-         , try prefixexpExp
-         , try tableconstExp
-         ]
+exp = choice [ opExp, nilExp, boolExp, numberExp, stringExp, varargExp,
+               fundefExp, prefixexpExp, tableconstExp ]
 
 -----------------------------------------------------------------------
 ---- Statements
