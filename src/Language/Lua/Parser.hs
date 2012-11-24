@@ -14,7 +14,7 @@ import Text.Parsec hiding (string)
 import Text.Parsec.LTok
 import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
-import Control.Monad (void)
+import Control.Monad (void, liftM)
 
 parseText :: Parsec [LTok] () a -> String -> Either ParseError a
 parseText p s = parse p "test" (llex s)
@@ -28,79 +28,85 @@ name = tokenValue <$> anyIdent
 number :: Parser String
 number = tokenValue <$> anyNum
 
--------------------------------------------------------------------
--- var parser
+
+data PrimaryExp
+    = PName Name
+    | PParen Exp
+    deriving (Show, Eq)
+
+data SuffixedExp
+    = SuffixedExp PrimaryExp [SuffixExp]
+    deriving (Show, Eq)
+
+data SuffixExp
+    = SSelect Name
+    | SSelectExp Exp
+    | SSelectMethod Name FunArg
+    | SFunCall FunArg
+    deriving (Show, Eq)
+
+primaryExp :: Parser PrimaryExp
+primaryExp = (PName <$> name) <|> (liftM PParen $ parens exp)
+
+suffixedExp :: Parser SuffixedExp
+suffixedExp = SuffixedExp <$> primaryExp <*> many suffixExp
+
+suffixExp :: Parser SuffixExp
+suffixExp = selectName <|> selectExp <|> selectMethod <|> funarg
+  where selectName = SSelect <$> (tok LTokDot >> name)
+        selectExp = SSelectExp <$>
+                      between (tok LTokLBracket)
+                              (tok LTokRBracket)
+                              exp
+        selectMethod = tok LTokColon >> (SSelectMethod <$> name <*> funArg)
+        funarg = SFunCall <$> funArg
+
+sexpToPexp :: SuffixedExp -> PrefixExp
+sexpToPexp (SuffixedExp t r) = case r of
+    []                            -> t'
+    (SSelect sname:xs)            -> iter xs (PEVar (SelectName t' sname))
+    (SSelectExp sexp:xs)          -> iter xs (PEVar (Select t' sexp))
+    (SSelectMethod mname args:xs) -> iter xs (PEFunCall (MethodCall t' mname args))
+    (SFunCall args:xs)            -> iter xs (PEFunCall (NormalFunCall t' args))
+
+  where t' :: PrefixExp
+        t' = case t of
+               PName name -> PEVar (Name name)
+               PParen exp -> Paren exp
+
+        iter :: [SuffixExp] -> PrefixExp -> PrefixExp
+        iter [] pe                            = pe
+        iter (SSelect sname:xs) pe            = iter xs (PEVar (SelectName pe sname))
+        iter (SSelectExp sexp:xs) pe          = iter xs (PEVar (Select pe sexp))
+        iter (SSelectMethod mname args:xs) pe = iter xs (PEFunCall (MethodCall pe mname args))
+        iter (SFunCall args:xs) pe            = iter xs (PEFunCall (NormalFunCall pe args))
+
+sexpToVar :: SuffixedExp -> Var
+sexpToVar sexp@(SuffixedExp prim sfs) =
+  case last sfs of
+    SSelectMethod{} -> undefined
+    SFunCall{} -> undefined
+    _ -> case sexpToPexp sexp of
+           PEVar var -> var
+           _ -> undefined
+
+sexpToFunCall :: SuffixedExp -> FunCall
+sexpToFunCall sexp@(SuffixedExp prim sfs) =
+  case last sfs of
+    SSelect{} -> undefined
+    SSelectExp{} -> undefined
+    _ -> case sexpToPexp sexp of
+           PEFunCall funcall -> funcall
+           _ -> undefined
 
 var :: Parser Var
-var = funvar <|> var'
-  where funvar = do
-          fc <- funCall
-          (x:xs) <- rest many1
-          return $ case x of
-            Left e -> buildVar (Select (PEFunCall fc) e) xs
-            Right n -> buildVar (SelectName (PEFunCall fc) n) xs
+var = liftM sexpToVar suffixedExp
 
--- this is used to eliminate left recursion.
-var' :: Parser Var
-var' = namevar <|> parenvar
-  where namevar = do
-          n <- name
-          r <- rest many
-          return $ buildVar (Name n) r
-
-        parenvar = do
-          n <- parens exp
-          (x:xs) <- rest many1
-          return $ case x of
-            Left e -> buildVar (Select (Paren n) e) xs
-            Right n' -> buildVar (SelectName (Paren n) n') xs
-
-rest :: (Parser (Either Exp Name) -> Parser [Either Exp Name]) -> Parser [Either Exp Name]
-rest c =
-  c $ (Left <$> between (tok LTokLBracket) (tok LTokRBracket) exp)
-     <|> (Right <$> (tok LTokDot >> name))
-
-buildVar :: Var -> [Either Exp String] -> Var
-buildVar var [] = var
-buildVar var (Left exp:xs) = buildVar (Select (PEVar var) exp) xs
-buildVar var (Right name:xs) = buildVar (SelectName (PEVar var) name) xs
-
--------------------------------------------------------------------
+funCall :: Parser FunCall
+funCall = liftM sexpToFunCall suffixedExp
 
 stringlit :: Parser String
 stringlit = tokenValue <$> string
-
-prefixExp :: Parser PrefixExp
---prefixExp = (PEFunCall <$> try funCall)
---        <|> (Paren <$> parens exp)
---        <|> (PEVar <$> var)
-prefixExp = (Paren <$> parens exp)
-        <|> (PEVar <$> try var)
-        <|> (PEFunCall <$> funCall)
-
-funCall :: Parser FunCall
-funCall = do
-    f <- func
-    cs <- calls
-    let pe = case f of
-               Left e  -> Paren e
-               Right s -> PEVar s
-    return $ buildFunCall pe cs
-
-  where func :: Parser (Either Exp Var)
-        func = (Left <$> parens exp) <|> (Right <$> var')
-
-        calls :: Parser [(Maybe String, FunArg)]
-        calls = many1 $ do
-          m <- optionMaybe (tok LTokColon >> name)
-          args <- funArg
-          return (m, args)
-
-        buildFunCall :: PrefixExp -> [(Maybe String, FunArg)] -> FunCall
-        buildFunCall pe [(Just n, args)] = MethodCall pe n args
-        buildFunCall pe [(Nothing, args)] = NormalFunCall pe args
-        buildFunCall pe ((Just n, args):xs) = buildFunCall (PEFunCall (MethodCall pe n args)) xs
-        buildFunCall pe ((Nothing, args):xs) = buildFunCall (PEFunCall (NormalFunCall pe args)) xs
 
 funArg :: Parser FunArg
 funArg = tableArg <|> stringArg <|> parlist
@@ -187,7 +193,7 @@ fundefExp = do
   body <- funBody
   return $ EFunDef (FunDef body)
 
-prefixexpExp = PrefixExp <$> prefixExp
+prefixexpExp = PrefixExp <$> (liftM sexpToPexp suffixedExp)
 
 tableconstExp = TableConst <$> table
 
