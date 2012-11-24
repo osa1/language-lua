@@ -140,7 +140,7 @@ retstat :: Parser [Exp]
 retstat = do
   tok LTokReturn
   exps <- exp `sepBy` tok LTokComma
-  optionMaybe (tok LTokSemic)
+  optional (tok LTokSemic)
   return exps
 
 tableField :: Parser TableField
