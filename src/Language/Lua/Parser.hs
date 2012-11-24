@@ -236,29 +236,29 @@ opTable = [ [ binary LTokExp       (Binop Exp)    AssocRight ]
 opExp = buildExpressionParser opTable exp' <?> "opExp"
 
 exp =
-    choice [ try opExp
-           , try prefixOp
-           , try nilExp
-           , try boolExp
-           , try numberExp
-           , try stringExp
-           , try varargExp
-           , try fundefExp
-           , try prefixexpExp
-           , try tableconstExp
-           ]
+  choice [ try opExp
+         , try prefixOp
+         , try nilExp
+         , try boolExp
+         , try numberExp
+         , try stringExp
+         , try varargExp
+         , try fundefExp
+         , try prefixexpExp
+         , try tableconstExp
+         ]
 
 exp' =
-    choice [ try prefixOp
-           , try nilExp
-           , try boolExp
-           , try numberExp
-           , try stringExp
-           , try varargExp
-           , try fundefExp
-           , try prefixexpExp
-           , try tableconstExp
-           ]
+  choice [ try prefixOp
+         , try nilExp
+         , try boolExp
+         , try numberExp
+         , try stringExp
+         , try varargExp
+         , try fundefExp
+         , try prefixexpExp
+         , try tableconstExp
+         ]
 
 -----------------------------------------------------------------------
 ---- Statements
@@ -271,10 +271,10 @@ emptyStat :: Parser ()
 emptyStat = void (tok LTokSemic)
 
 assignStat = do
-    vars <- var `sepBy` tok LTokComma
-    tok LTokAssign
-    exps <- exp `sepBy` tok LTokComma
-    return $ Assign vars exps
+  vars <- var `sepBy` tok LTokComma
+  tok LTokAssign
+  exps <- exp `sepBy` tok LTokComma
+  return $ Assign vars exps
 
 funCallStat = FunCall <$> funCall
 
@@ -296,19 +296,19 @@ whileStat =
               return $ While cond body)
 
 repeatStat = do
-    tok LTokRepeat
-    body <- block
-    tok LTokUntil
-    cond <- exp
-    return $ Repeat body cond
+  tok LTokRepeat
+  body <- block
+  tok LTokUntil
+  cond <- exp
+  return $ Repeat body cond
 
 ifStat =
-  between (tok LTokIf)
-          (tok LTokEnd)
-          (do f <- ifPart
-              conds <- many elseifPart
-              l <- optionMaybe elsePart
-              return $ If (f:conds) l)
+    between (tok LTokIf)
+            (tok LTokEnd)
+            (do f <- ifPart
+                conds <- many elseifPart
+                l <- optionMaybe elsePart
+                return $ If (f:conds) l)
 
   where ifPart :: Parser (Exp, Block)
         ifPart = do
@@ -329,27 +329,27 @@ ifStat =
         elsePart = tok LTokElse >> block
 
 forRangeStat =
-    between (tok LTokFor)
-            (tok LTokEnd)
-            (do name' <- name
-                tok LTokAssign
-                start <- exp
-                tok LTokComma
-                end <- exp
-                range <- optionMaybe $ tok LTokComma >> exp
-                tok LTokDo
-                body <- block
-                return $ ForRange name' start end range body)
+  between (tok LTokFor)
+          (tok LTokEnd)
+          (do name' <- name
+              tok LTokAssign
+              start <- exp
+              tok LTokComma
+              end <- exp
+              range <- optionMaybe $ tok LTokComma >> exp
+              tok LTokDo
+              body <- block
+              return $ ForRange name' start end range body)
 
 forInStat =
-    between (tok LTokFor)
-            (tok LTokEnd)
-            (do names <- name `sepBy` tok LTokComma
-                tok LTokIn
-                exps <- exp `sepBy` tok LTokComma
-                tok LTokDo
-                body <- block
-                return $ ForIn names exps body)
+  between (tok LTokFor)
+          (tok LTokEnd)
+          (do names <- name `sepBy` tok LTokComma
+              tok LTokIn
+              exps <- exp `sepBy` tok LTokComma
+              tok LTokDo
+              body <- block
+              return $ ForIn names exps body)
 
 funAssignStat = do
     tok LTokFunction
@@ -362,34 +362,34 @@ funAssignStat = do
                           <*> many (tok LTokColon >> name)
 
 localFunAssignStat = do
-    tok LTokLocal
-    tok LTokFunction
-    name' <- name
-    body <- funBody
-    return $ LocalFunAssign name' body
+  tok LTokLocal
+  tok LTokFunction
+  name' <- name
+  body <- funBody
+  return $ LocalFunAssign name' body
 
 localAssignStat = do
-    tok LTokLocal
-    names <- name `sepBy` tok LTokComma
-    rest <- optionMaybe $ tok LTokAssign >> exp `sepBy` tok LTokComma
-    return $ LocalAssign names rest
+  tok LTokLocal
+  names <- name `sepBy` tok LTokComma
+  rest <- optionMaybe $ tok LTokAssign >> exp `sepBy` tok LTokComma
+  return $ LocalAssign names rest
 
 stat =
-    choice [ try assignStat
-           , try funCallStat
-           , try labelStat
-           , try breakStat
-           , try gotoStat
-           , try doStat
-           , try whileStat
-           , try repeatStat
-           , try ifStat
-           , try forRangeStat
-           , try forInStat
-           , try funAssignStat
-           , try localFunAssignStat
-           , try localAssignStat
-           ]
+  choice [ try assignStat
+         , try funCallStat
+         , try labelStat
+         , try breakStat
+         , try gotoStat
+         , try doStat
+         , try whileStat
+         , try repeatStat
+         , try ifStat
+         , try forRangeStat
+         , try forInStat
+         , try funAssignStat
+         , try localFunAssignStat
+         , try localAssignStat
+         ]
 
 chunk :: Parser Block
 chunk = block <* tok LTokEof
