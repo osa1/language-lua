@@ -2,7 +2,12 @@
                 -fno-warn-hi-shadowing
                 -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind #-}
-module Language.Lua.Parser where
+module Language.Lua.Parser
+  ( parseText
+  , stat
+  , exp
+  , chunk
+  ) where
 
 import Prelude hiding (exp, LT, GT, EQ, repeat)
 
