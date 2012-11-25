@@ -86,24 +86,25 @@ sexpToPexp (SuffixedExp t r) = case r of
         iter (SSelectMethod mname args:xs) pe = iter xs (PEFunCall (MethodCall pe mname args))
         iter (SFunCall args:xs) pe            = iter xs (PEFunCall (NormalFunCall pe args))
 
-sexpToVar :: SuffixedExp -> Var
-sexpToVar (SuffixedExp (PName name) []) = Name name
-sexpToVar (SuffixedExp _ []) = undefined
+-- TODO: improve error messages.
+sexpToVar :: SuffixedExp -> Parser Var
+sexpToVar (SuffixedExp (PName name) []) = return (Name name)
+sexpToVar (SuffixedExp _ []) = fail "syntax error"
 sexpToVar sexp = case sexpToPexp sexp of
-                   PEVar var -> var
-                   _ -> undefined
+                   PEVar var -> return var
+                   _ -> fail "syntax error"
 
-sexpToFunCall :: SuffixedExp -> FunCall
-sexpToFunCall (SuffixedExp _ []) = undefined
+sexpToFunCall :: SuffixedExp -> Parser FunCall
+sexpToFunCall (SuffixedExp _ []) = fail "syntax error"
 sexpToFunCall sexp = case sexpToPexp sexp of
-                       PEFunCall funcall -> funcall
-                       _ -> undefined
+                       PEFunCall funcall -> return funcall
+                       _ -> fail "syntax error"
 
 var :: Parser Var
-var = liftM sexpToVar suffixedExp
+var = suffixedExp >>= sexpToVar
 
 funCall :: Parser FunCall
-funCall = liftM sexpToFunCall suffixedExp
+funCall = suffixedExp >>= sexpToFunCall
 
 stringlit :: Parser String
 stringlit = tokenValue <$> string
