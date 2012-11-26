@@ -13,7 +13,7 @@ Build-type:          Simple
 Stability:           Experimental
 Cabal-version:       >= 1.9.2
 
-Extra-source-files:src/Text/PrettyPrint/LICENSE
+Extra-source-files:  src/Text/PrettyPrint/LICENSE
 
 Source-repository head
   type:              git
@@ -31,7 +31,7 @@ Library
 
   Other-modules:     Text.PrettyPrint.Leijen
 
-  Build-depends:     base >= 4.5 && < 4.6,
-                     mtl >= 2.0 && < 2.1,
+  Build-depends:     base >= 4.5 && < 4.7,
+                     mtl >= 2.0 && < 2.2,
                      parsec >= 3.1.3 && < 3.2,
                      array >= 0.4 && < 0.5
