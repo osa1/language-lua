@@ -4,6 +4,7 @@
                 -fno-warn-unused-do-bind #-}
 module Language.Lua.Parser
   ( parseText
+  , parseFile
   , stat
   , exp
   , chunk
@@ -21,8 +22,13 @@ import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 import Control.Monad (void, liftM)
 
+-- | Runs Lua lexer before parsing.
 parseText :: Parsec [LTok] () a -> String -> Either ParseError a
-parseText p s = parse p "test" (llex s)
+parseText p s = parse p "lua" (llex s)
+
+-- | Parse a Lua file. You can use @parseText chunk@ to parse a file from a string.
+parseFile :: FilePath -> IO (Either ParseError Block)
+parseFile = liftM (parseText chunk) . readFile
 
 parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
 parens = between (tok LTokLParen) (tok LTokRParen)
@@ -111,10 +117,10 @@ stringlit = tokenValue <$> string
 
 funArg :: Parser FunArg
 funArg = tableArg <|> stringArg <|> parlist
-  where tableArg = TableArg <$> table
+  where tableArg  = TableArg <$> table
         stringArg = StringArg <$> stringlit
-        parlist = parens (do exps <- exp `sepBy` tok LTokComma
-                             return $ Args exps)
+        parlist   = parens (do exps <- exp `sepBy` tok LTokComma
+                               return $ Args exps)
 
 funBody :: Parser FunBody
 funBody = do
@@ -232,6 +238,7 @@ opExp = buildExpressionParser opTable exp' <?> "opExp"
 exp' = choice [ nilExp, boolExp, numberExp, stringExp, varargExp,
                 fundefExp, prefixexpExp, tableconstExp ]
 
+-- | Expression parser.
 exp = choice [ opExp, nilExp, boolExp, numberExp, stringExp, varargExp,
                fundefExp, prefixexpExp, tableconstExp ]
 
@@ -349,6 +356,7 @@ localAssignStat = do
   rest <- optionMaybe $ tok LTokAssign >> exp `sepBy` tok LTokComma
   return $ LocalAssign names rest
 
+-- | Statement parser.
 stat =
   choice [ try assignStat
          , try funCallStat
@@ -366,5 +374,6 @@ stat =
          , try localAssignStat
          ]
 
+-- | Lua file parser.
 chunk :: Parser Block
 chunk = block <* tok LTokEof
