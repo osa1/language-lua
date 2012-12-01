@@ -1,6 +1,6 @@
 Name:                language-lua
 Description:         Lua 5.2 lexer, parser and pretty-printer.
-Version:             0.1
+Version:             0.1.2
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
@@ -22,7 +22,8 @@ Source-repository head
 Library
   Hs-source-dirs:    src
 
-  Exposed-modules:   Language.Lua.Types,
+  Exposed-modules:   Language.Lua,
+                     Language.Lua.Types,
                      Language.Lua.Token,
                      Language.Lua.Parser,
                      Language.Lua.Lexer,
