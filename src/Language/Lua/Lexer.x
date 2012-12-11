@@ -134,17 +134,17 @@ addCharToStringValue c = Alex $ \s -> Right (s{alex_ust=(alex_ust s){stringValue
 enterString :: AlexAction LTok
 enterString (posn,_,_,_) len = do
   initString len posn
-  alexMonadScan
+  alexMonadScan'
 
 addString :: AlexAction LTok
 addString (_,_,_,s) len = do
   forM_ (take len s) addCharToStringValue
-  alexMonadScan
+  alexMonadScan'
 
 addCharToString :: AlexAction LTok
 addCharToString (_,_,_,s) len = do
   addCharToStringValue (head s)
-  alexMonadScan
+  alexMonadScan'
 
 endString :: Alex ()
 endString = Alex $ \s -> Right(s{alex_ust=(alex_ust s){stringState=False}}, ())
@@ -154,7 +154,7 @@ testAndEndString (_,_,_,s) len = do
   startlen <- getStringDelimLen
   if startlen /= len
     then do forM_ (take len s) addCharToStringValue
-            alexMonadScan
+            alexMonadScan'
     else do endString
             val <- getStringValue
             posn <- getStringPosn
@@ -215,10 +215,23 @@ ident (posn,_,_,s) len = return (tok, Right posn)
 alexEOF :: Alex LTok
 alexEOF = return (LTokEof, Left EOF)
 
+alexMonadScan' = do
+  inp <- alexGetInput
+  sc <- alexGetStartCode
+  case alexScan inp sc of
+    AlexEOF -> alexEOF
+    AlexError (posn,ch,_,s) -> alexError ("lexical error near " ++ show posn ++ " at char " ++ show ch)
+    AlexSkip  inp' len -> do
+        alexSetInput inp'
+        alexMonadScan'
+    AlexToken inp' len action -> do
+        alexSetInput inp'
+        action (ignorePendingBytes inp) len
+
 scanner :: String -> Either String [LTok]
 scanner str = runAlex str loop
   where loop = do
-          t@(tok, _) <- alexMonadScan
+          t@(tok, _) <- alexMonadScan'
           if tok == LTokEof
             then do stringState <- getStringState
                     if stringState
