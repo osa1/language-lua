@@ -22,7 +22,8 @@ import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 import Control.Monad (void, liftM)
 
--- | Runs Lua lexer before parsing.
+-- | Runs Lua lexer before parsing. Use @parseText stat@ to parse
+-- statements, and @parseText exp@ to parse expressions.
 parseText :: Parsec [LTok] () a -> String -> Either ParseError a
 parseText p s = parse p "lua" (llex s)
 
