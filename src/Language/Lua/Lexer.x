@@ -4,6 +4,7 @@
 {
 module Language.Lua.Lexer
   ( llex
+  , llexFile
   , LTok
   , AlexPosn(..)
   ) where
@@ -245,4 +246,8 @@ llex :: String -> [LTok]
 llex s = case scanner s of
            Left err -> error err
            Right r  -> r
+
+-- | Run Lua lexer on a file.
+llexFile :: FilePath -> IO [LTok]
+llexFile p = llex <$> readFile p
 }
