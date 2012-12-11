@@ -1,6 +1,3 @@
--- TODO:
--- * Multi-line comments and strings
-
 {
 module Language.Lua.Lexer
   ( llex
@@ -11,7 +8,7 @@ module Language.Lua.Lexer
 
 import Language.Lua.Token
 import Control.Applicative ((<$>))
-import Control.Monad (forM_, unless)
+import Control.Monad (forM_, unless, when)
 }
 
 %wrapper "monadUserState"
@@ -50,7 +47,6 @@ $anyButNL = \0-\255 # \n
 tokens :-
 
     <0> $white+  ;
-    <0> "--" [^\n]* ;
 
     <0> $letter $identletter* { ident }
 
@@ -68,6 +64,11 @@ tokens :-
     <0> \[ \=* \[            { enterString `andBegin` state_string }
     <state_string> \] \=* \] { testAndEndString }
     <state_string> $longstr  { addCharToString }
+
+    <0> "--"                  { enterComment `andBegin` state_comment }
+    <state_comment> . # \n    ;
+    <state_comment> \n        { testAndEndComment }
+    <state_comment> \[ \=* \[ { enterString `andBegin` state_string }
 
     <0> "+"   { tok LTokPlus }
     <0> "-"   { tok LTokMinus}
@@ -105,17 +106,23 @@ data AlexUserState = AlexUserState { stringState     :: !Bool
                                    , stringDelimLen  :: !Int
                                    , stringPosn      :: !AlexPosn
                                    , stringValue     :: !String
-                                   } deriving Show
+                                   -- comments
+                                   , commentState    :: !Bool
+                                   }
 
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState { stringState     = False
                                   , stringDelimLen  = 0
-                                  , stringPosn      = AlexPn 1 2 3
+                                  , stringPosn      = AlexPn 0 0 0
                                   , stringValue     = ""
+                                  , commentState    = False
                                   }
 
 initString :: Int -> AlexPosn -> Alex ()
 initString i posn = Alex $ \s -> Right(s{alex_ust=(alex_ust s){stringState=True,stringValue="",stringDelimLen=i,stringPosn=posn}}, ())
+
+initComment :: Alex ()
+initComment = Alex $ \s -> Right(s{alex_ust=(alex_ust s){commentState=True}}, ())
 
 getStringDelimLen :: Alex Int
 getStringDelimLen = Alex $ \s@AlexState{alex_ust=ust} -> Right (s, stringDelimLen ust)
@@ -129,12 +136,20 @@ getStringValue = Alex $ \s@AlexState{alex_ust=ust} -> Right (s, stringValue ust)
 getStringState :: Alex Bool
 getStringState = Alex $ \s@AlexState{alex_ust=ust} -> Right (s, stringState ust)
 
+getCommentState :: Alex Bool
+getCommentState = Alex $ \s@AlexState{alex_ust=ust} -> Right (s, commentState ust)
+
 addCharToStringValue :: Char -> Alex ()
 addCharToStringValue c = Alex $ \s -> Right (s{alex_ust=(alex_ust s){stringValue=c:stringValue (alex_ust s)}}, ())
 
 enterString :: AlexAction LTok
 enterString (posn,_,_,_) len = do
   initString len posn
+  alexMonadScan'
+
+enterComment :: AlexAction LTok
+enterComment _ _ = do
+  initComment
   alexMonadScan'
 
 addString :: AlexAction LTok
@@ -150,6 +165,14 @@ addCharToString (_,_,_,s) len = do
 endString :: Alex ()
 endString = Alex $ \s -> Right(s{alex_ust=(alex_ust s){stringState=False}}, ())
 
+endComment :: Alex ()
+endComment = Alex $ \s -> Right(s{alex_ust=(alex_ust s){commentState=False}}, ())
+
+testAndEndComment :: AlexAction LTok
+testAndEndComment _ _ = do
+  ss <- getStringState
+  if ss then alexMonadScan' else endComment >> alexSetStartCode 0 >> alexMonadScan'
+
 testAndEndString ::AlexAction LTok
 testAndEndString (_,_,_,s) len = do
   startlen <- getStringDelimLen
@@ -157,10 +180,16 @@ testAndEndString (_,_,_,s) len = do
     then do forM_ (take len s) addCharToStringValue
             alexMonadScan'
     else do endString
-            val <- getStringValue
-            posn <- getStringPosn
             alexSetStartCode 0
-            return (LTokSLit (reverse val), Right posn)
+            cs <- getCommentState
+            if cs
+              then do
+                endComment
+                alexMonadScan'
+              else do
+                val  <- getStringValue
+                posn <- getStringPosn
+                return (LTokSLit (reverse val), Right posn)
 
 data EOF = EOF deriving Show
 
@@ -216,11 +245,14 @@ ident (posn,_,_,s) len = return (tok, Right posn)
 alexEOF :: Alex LTok
 alexEOF = return (LTokEof, Left EOF)
 
+alexMonadScan' :: Alex LTok
 alexMonadScan' = do
   inp <- alexGetInput
   sc <- alexGetStartCode
   case alexScan inp sc of
-    AlexEOF -> alexEOF
+    AlexEOF -> do cs <- getCommentState
+                  when cs endString
+                  alexEOF
     AlexError (posn,ch,_,s) -> alexError ("lexical error near " ++ show posn ++ " at char " ++ show ch)
     AlexSkip  inp' len -> do
         alexSetInput inp'
