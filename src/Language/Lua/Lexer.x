@@ -23,8 +23,8 @@ $digit    = 0-9                          -- decimal digits
 $octdigit = 0-7                          -- octal digits
 $hexdigit = [0-9a-fA-F]                  -- hexadecimal digits
 
-$dqstr    = \0-\255 # [ \\ \" \n ]       -- valid character in a string literal with dquotes
-$sqstr    = \0-\255 # [ \\ \' \n ]       -- valid character in a string literal with quotes
+$dqstr    = \0-\255 # [ \" \n ]          -- valid character in a string literal with dquotes
+$sqstr    = \0-\255 # [ \' \n ]          -- valid character in a string literal with quotes
 $longstr  = \0-\255                      -- valid character in a long string
 $anyButNL = \0-\255 # \n
 
