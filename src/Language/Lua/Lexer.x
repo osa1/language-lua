@@ -61,14 +61,14 @@ tokens :-
     <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) _ -> return (LTokSLit (tail . init $ s), Right posn) }
 
     -- long strings
-    <0> \[ \=* \[            { enterString `andBegin` state_string }
+    <0> \[ \=* \[ \n?        { enterString `andBegin` state_string }
     <state_string> \] \=* \] { testAndEndString }
     <state_string> $longstr  { addCharToString }
 
-    <0> "--"                  { enterComment `andBegin` state_comment }
-    <state_comment> . # \n    ;
-    <state_comment> \n        { testAndEndComment }
-    <state_comment> \[ \=* \[ { enterString `andBegin` state_string }
+    <0> "--"                      { enterComment `andBegin` state_comment }
+    <state_comment> . # \n        ;
+    <state_comment> \n            { testAndEndComment }
+    <state_comment> \[ \=* \[ \n? { enterString `andBegin` state_string }
 
     <0> "+"   { tok LTokPlus }
     <0> "-"   { tok LTokMinus}
@@ -143,8 +143,8 @@ addCharToStringValue :: Char -> Alex ()
 addCharToStringValue c = Alex $ \s -> Right (s{alex_ust=(alex_ust s){stringValue=c:stringValue (alex_ust s)}}, ())
 
 enterString :: AlexAction LTok
-enterString (posn,_,_,_) len = do
-  initString len posn
+enterString (posn,_,_,s) len = do
+  initString (if (s !! (len-1) == '\n') then len-1 else len) posn
   alexMonadScan'
 
 enterComment :: AlexAction LTok
