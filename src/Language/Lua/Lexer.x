@@ -253,7 +253,8 @@ alexMonadScan' = do
     AlexEOF -> do cs <- getCommentState
                   when cs endString
                   alexEOF
-    AlexError (posn,ch,_,s) -> alexError ("lexical error near " ++ show posn ++ " at char " ++ show ch)
+    AlexError ((AlexPn _ line col),ch,_,_) -> alexError $ concat
+        [ "lexical error near line: " , show line , " col: " , show col , " at char " , [ch] ]
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'

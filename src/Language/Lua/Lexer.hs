@@ -414,7 +414,8 @@ alexMonadScan' = do
     AlexEOF -> do cs <- getCommentState
                   when cs endString
                   alexEOF
-    AlexError (posn,ch,_,s) -> alexError ("lexical error near " ++ show posn ++ " at char " ++ show ch)
+    AlexError ((AlexPn _ line col),ch,_,_) -> alexError $ concat
+        [ "lexical error near line: " , show line , " col: " , show col , " at char " , [ch] ]
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'
@@ -443,11 +444,6 @@ llex s = case scanner s of
 -- | Run Lua lexer on a file.
 llexFile :: FilePath -> IO [LTok]
 llexFile p = llex <$> readFile p
-
-main :: IO ()
-main = do
-  c <- getContents
-  putStrLn (show $ llex c)
 
 
 state_comment,state_string :: Int
