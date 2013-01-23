@@ -26,8 +26,6 @@ $dqstr    = \0-\255 # [ \" \n ]          -- valid character in a string literal 
 $sqstr    = \0-\255 # [ \' \n ]          -- valid character in a string literal with quotes
 $longstr  = \0-\255                      -- valid character in a long string
 
-@sp = $space*
-
 -- escape characters
 @charescd  = \\ ([ntvbrfaeE\\\?\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
 @charescs  = \\ ([ntvbrfaeE\\\?\'] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
