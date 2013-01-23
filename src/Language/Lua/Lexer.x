@@ -14,7 +14,6 @@ import Control.Monad (forM_, unless, when)
 %wrapper "monadUserState"
 
 $space = [ \ \t ]                        -- horizontal white space
-$eol   = \n                              -- end of line
 
 $letter      = [a-zA-Z_]                 -- first letter of variables
 $identletter = [a-zA-Z_0-9]              -- letters for rest of variables
@@ -26,7 +25,6 @@ $hexdigit = [0-9a-fA-F]                  -- hexadecimal digits
 $dqstr    = \0-\255 # [ \" \n ]          -- valid character in a string literal with dquotes
 $sqstr    = \0-\255 # [ \' \n ]          -- valid character in a string literal with quotes
 $longstr  = \0-\255                      -- valid character in a long string
-$anyButNL = \0-\255 # \n
 
 @sp = $space*
 
@@ -71,8 +69,8 @@ tokens :-
     <state_comment> \[ \=* \[ \n? { enterString `andBegin` state_string }
 
     <0> "+"   { tok LTokPlus }
-    <0> "-"   { tok LTokMinus}
-    <0> "*"   { tok LTokStar}
+    <0> "-"   { tok LTokMinus }
+    <0> "*"   { tok LTokStar }
     <0> "/"   { tok LTokSlash }
     <0> "%"   { tok LTokPercent }
     <0> "^"   { tok LTokExp }
