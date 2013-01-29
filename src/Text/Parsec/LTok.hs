@@ -36,11 +36,11 @@ anyIdent = satisfy p <?> "ident"
 -- | Parses a `LTokNum`.
 anyNum :: Monad m => ParsecT [LTok] u m LToken
 anyNum = satisfy p <?> "number"
-    where p (t, _) = case t of LTokNum _ -> True
-                               _ -> False
+  where p (t, _) = case t of LTokNum _ -> True
+                             _ -> False
 
 -- | Parses a `LTokSLit`.
 string :: Monad m => ParsecT [LTok] u m LToken
 string = satisfy p <?> "string"
-    where p (t, _) = case t of LTokSLit _ -> True
-                               _ -> False
+  where p (t, _) = case t of LTokSLit _ -> True
+                             _ -> False
