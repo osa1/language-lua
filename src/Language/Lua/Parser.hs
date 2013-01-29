@@ -361,18 +361,18 @@ localAssignStat = do
 stat =
   choice [ try assignStat
          , try funCallStat
-         , try labelStat
-         , try breakStat
-         , try gotoStat
-         , try doStat
-         , try whileStat
-         , try repeatStat
-         , try ifStat
+         , labelStat
+         , breakStat
+         , gotoStat
+         , doStat
+         , whileStat
+         , repeatStat
+         , ifStat
          , try forRangeStat
-         , try forInStat
-         , try funAssignStat
+         , forInStat
+         , funAssignStat
          , try localFunAssignStat
-         , try localAssignStat
+         , localAssignStat
          ]
 
 -- | Lua file parser.
