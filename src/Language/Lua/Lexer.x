@@ -27,8 +27,8 @@ $sqstr    = \0-\255 # [ \' \n ]          -- valid character in a string literal 
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfaeE\\\?\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
-@charescs  = \\ ([ntvbrfaeE\\\?\'] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
+@charescd  = '\\' ([ntvbrfaeE\\\?\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
+@charescs  = '\\' ([ntvbrfaeE\\\?\'] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
