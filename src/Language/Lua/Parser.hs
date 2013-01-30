@@ -152,7 +152,7 @@ retstat = do
   return exps
 
 tableField :: Parser TableField
-tableField = expField <|> namedField <|> field
+tableField = choice [ expField, try namedField, field ]
   where expField :: Parser TableField
         expField = do
             e1 <- brackets exp
