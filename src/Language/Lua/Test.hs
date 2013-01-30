@@ -23,7 +23,7 @@ instance Testable Block where
 
 checkTree :: Block -> Bool
 checkTree tree =
-  let code = PP.pprint undefined tree
+  let code = PP.pprint tree
       parseResult = P.parseText P.chunk (show code)
   in parseResult == Right tree
 
@@ -62,7 +62,7 @@ instance Arbitrary Stat where
                       , FunAssign <$> arbitrary <*> arbitrary
                       , LocalFunAssign <$> arbitraryLuaString <*> arbitrary
                       , LocalAssign <$> arbitraryLuaStringList <*> arbitrary
-                      -- , return EmptyStat
+                      , return EmptyStat
                       ]
 
 instance Arbitrary Exp where

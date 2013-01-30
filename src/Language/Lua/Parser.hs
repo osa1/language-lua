@@ -246,12 +246,11 @@ exp = choice [ opExp, nilExp, boolExp, numberExp, stringExp, varargExp,
 -----------------------------------------------------------------------
 ---- Statements
 
-assignStat, funCallStat, labelStat, breakStat, gotoStat,
-    doStat, whileStat, repeatStat, ifStat, forRangeStat,
-    forInStat, funAssignStat, localFunAssignStat, localAssignStat, stat :: Parser Stat
+emptyStat, assignStat, funCallStat, labelStat, breakStat, gotoStat,
+    doStat, whileStat, repeatStat, ifStat, forRangeStat, forInStat,
+    funAssignStat, localFunAssignStat, localAssignStat, stat :: Parser Stat
 
-emptyStat :: Parser ()
-emptyStat = void (tok LTokSemic)
+emptyStat = void (tok LTokSemic) >> return EmptyStat
 
 assignStat = do
   vars <- var `sepBy` tok LTokComma
@@ -359,7 +358,8 @@ localAssignStat = do
 
 -- | Statement parser.
 stat =
-  choice [ try assignStat
+  choice [ emptyStat
+         , try assignStat
          , try funCallStat
          , labelStat
          , breakStat
