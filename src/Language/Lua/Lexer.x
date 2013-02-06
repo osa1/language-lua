@@ -53,8 +53,8 @@ tokens :-
     <0> @hexprefix @hexdigits @expparthex    { tokWValue LTokNum }
     <0> @hexprefix @mantparthex @expparthex? { tokWValue LTokNum }
 
-    <0> \"($dqstr|@charescd)*\" { \(posn,_,_,s) _ -> return (LTokSLit (tail . init $ s), Right posn) }
-    <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) _ -> return (LTokSLit (tail . init $ s), Right posn) }
+    <0> \"($dqstr|@charescd)*\" { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), Right posn) }
+    <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), Right posn) }
 
     -- long strings
     <0> \[ \=* \[ \n?        { enterString `andBegin` state_string }
