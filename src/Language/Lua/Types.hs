@@ -67,7 +67,7 @@ data TableField
 data Block = Block [Stat] (Maybe [Exp])
     deriving (Show, Eq)
 
-data FunName = FunName Name (Maybe Name) [Name]
+data FunName = FunName Name [Name] (Maybe Name)
     deriving (Show, Eq)
 
 data FunDef = FunDef FunBody

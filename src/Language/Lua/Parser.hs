@@ -340,8 +340,8 @@ funAssignStat = do
     return $ FunAssign name' body
   where funName :: Parser FunName
         funName = FunName <$> name
-                          <*> optionMaybe (tok LTokDot >> name)
-                          <*> many (tok LTokColon >> name)
+                          <*> many (tok LTokDot >> name)
+                          <*> optionMaybe (tok LTokColon >> name)
 
 localFunAssignStat = do
   tok LTokLocal
