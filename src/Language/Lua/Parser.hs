@@ -341,7 +341,7 @@ funAssignStat = do
   where funName :: Parser FunName
         funName = FunName <$> name
                           <*> many (tok LTokDot >> name)
-                          <*> many (tok LTokColon >> name)
+                          <*> optionMaybe (tok LTokColon >> name)
 
 localFunAssignStat = do
   tok LTokLocal
