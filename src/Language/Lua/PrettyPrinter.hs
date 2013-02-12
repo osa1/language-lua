@@ -92,10 +92,10 @@ instance LPretty Block where
                      Just e  -> nest 2 (text "return" </> (intercalate comma (map pprint e)))
 
 instance LPretty FunName where
-    pprint (FunName name s methods) = text name <> (intercalate dot (map pprint s))  <> methods'
-      where methods' = case methods of
+    pprint (FunName name s methods) = cat (punctuate dot (map pprint $ name:s)) <> method'
+      where method' = case methods of
                    Nothing -> empty
-                   Just m' -> char '.' <> text m'
+                   Just m' -> char ':' <> text m'
 
 instance LPretty FunDef where
     pprint (FunDef body) = pprint body
