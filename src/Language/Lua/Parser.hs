@@ -25,11 +25,12 @@ import Control.Monad (void, liftM)
 -- | Runs Lua lexer before parsing. Use @parseText stat@ to parse
 -- statements, and @parseText exp@ to parse expressions.
 parseText :: Parsec [LTok] () a -> String -> Either ParseError a
-parseText p s = parse p "lua" (llex s)
+parseText p s = parse p "<string>" (llex s)
 
 -- | Parse a Lua file. You can use @parseText chunk@ to parse a file from a string.
 parseFile :: FilePath -> IO (Either ParseError Block)
 parseFile = liftM (parseText chunk) . readFile
+parseFile path = parse chunk path . llex <$> readFile path
 
 parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
 parens = between (tok LTokLParen) (tok LTokRParen)
