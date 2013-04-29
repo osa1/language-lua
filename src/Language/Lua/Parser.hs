@@ -125,10 +125,10 @@ stringlit :: Parser String
 stringlit = tokenValue <$> string
 
 funArg :: Parser (FunArg SourcePos)
-funArg = tableArg <|> stringArg <|> parlist
+funArg = tableArg <|> stringArg <|> arglist
   where tableArg  = TableArg <$> getPosition <*> table
         stringArg = StringArg <$> getPosition <*> stringlit
-        parlist   = do
+        arglist   = do
           pos <- getPosition
           parens (do exps <- exp `sepBy` tok LTokComma
                      return $ Args pos exps)
@@ -136,18 +136,22 @@ funArg = tableArg <|> stringArg <|> parlist
 funBody :: Parser (FunBody SourcePos)
 funBody = do
     pos <- getPosition
-    (params, vararg) <- parlist
+    (params, vararg) <- arglist
     body <- block
     tok LTokEnd
     return $ FunBody pos params vararg body
 
-  where parlist = parens $ do
+  where lastarg = do
+          pos <- getPosition
+          arg <- optionMaybe (tok LTokEllipsis <|> tok LTokComma)
+          case arg of
+            Just LTokEllipsis -> return (Just pos)
+            _ -> return Nothing
+
+        arglist = parens $ do
           vars <- name `sepEndBy` tok LTokComma
-          vararg <- optionMaybe (tok LTokEllipsis <|> tok LTokComma)
-          return $ case vararg of
-                       Nothing -> (vars, False)
-                       Just LTokEllipsis -> (vars, True)
-                       _ -> (vars, False)
+          vararg <- lastarg
+          return (vars, vararg)
 
 block :: Parser (Block SourcePos)
 block = do

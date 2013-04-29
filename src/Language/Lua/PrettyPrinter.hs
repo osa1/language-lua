@@ -112,8 +112,11 @@ pprintFunction funname (FunBody _ args vararg block)
   where funhead = case funname of
                     Nothing -> nest 2 (text "function" </> args')
                     Just n  -> nest 2 (text "function" </> n </> args')
+        vararg' = case vararg of
+                    Nothing -> []
+                    Just pos -> [Name pos "..."]
         args' = parens (align (cat (punctuate (comma <> space)
-                                        (map pprint (args ++ if vararg then [Name undefined "..."] else []))))) -- FIXME:
+                                        (map pprint (args ++ vararg')))))
         funbody = pprint block
         end = text "end"
 

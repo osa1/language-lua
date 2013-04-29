@@ -79,7 +79,7 @@ data FunName a = FunName a (Name a) [Name a] (Maybe (Name a))
 data FunDef a = FunDef a (FunBody a)
     deriving (Show, Eq, Functor)
 
-data FunBody a = FunBody a [Name a] Bool (Block a) -- ^(args, vararg predicate, block)
+data FunBody a = FunBody a [Name a] (Maybe a) (Block a) -- ^(args, vararg predicate, block)
     deriving (Show, Eq, Functor)
 
 data FunCall a
