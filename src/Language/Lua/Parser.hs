@@ -320,15 +320,13 @@ ifStat = do
                 return $ If pos (f:conds) l)
 
   where ifPart :: Parser (Exp SourcePos, Block SourcePos)
-        ifPart = do
-            cond <- exp
-            tok LTokThen
-            body <- block
-            return (cond, body)
+        ifPart = cond
 
         elseifPart :: Parser (Exp SourcePos, Block SourcePos)
-        elseifPart = do
-            tok LTokElseIf
+        elseifPart = tok LTokElseIf >> cond
+
+        cond :: Parser (Exp SourcePos, Block SourcePos)
+        cond = do
             cond <- exp
             tok LTokThen
             body <- block
