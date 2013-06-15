@@ -217,15 +217,15 @@ token t input len = return (t input len)
 -- -----------------------------------------------------------------------------
 -- Basic wrapper
 
-{-# LINE 346 "templates/wrappers.hs" #-}
+{-# LINE 347 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
 -- Basic wrapper, ByteString version
 
-{-# LINE 364 "templates/wrappers.hs" #-}
+{-# LINE 365 "templates/wrappers.hs" #-}
 
-{-# LINE 377 "templates/wrappers.hs" #-}
+{-# LINE 378 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
@@ -233,13 +233,13 @@ token t input len = return (t input len)
 
 -- Adds text positions to the basic model.
 
-{-# LINE 394 "templates/wrappers.hs" #-}
+{-# LINE 395 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
 -- Posn wrapper, ByteString version
 
-{-# LINE 409 "templates/wrappers.hs" #-}
+{-# LINE 410 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
@@ -259,7 +259,7 @@ alex_check = listArray (0,3194) [-1,9,10,11,12,13,61,70,43,10,45,79,79,48,49,50,
 alex_deflt :: Array Int Int
 alex_deflt = listArray (0,92) [-1,61,57,-1,-1,-1,-1,-1,-1,22,22,10,10,-1,-1,3,3,26,26,-1,61,61,61,57,57,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 
-alex_accept = listArray (0::Int,92) [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[(AlexAccSkip)],[(AlexAcc (alex_action_1))],[(AlexAcc (alex_action_2))],[(AlexAcc (alex_action_2))],[(AlexAcc (alex_action_3))],[(AlexAcc (alex_action_4))],[(AlexAcc (alex_action_4))],[(AlexAcc (alex_action_5))],[(AlexAcc (alex_action_6))],[(AlexAcc (alex_action_7))],[(AlexAcc (alex_action_7))],[(AlexAcc (alex_action_8))],[(AlexAcc (alex_action_8))],[(AlexAcc (alex_action_9))],[(AlexAcc (alex_action_9))],[(AlexAcc (alex_action_10))],[(AlexAcc (alex_action_10))],[(AlexAcc (alex_action_11))],[(AlexAcc (alex_action_12))],[(AlexAcc (alex_action_12))],[(AlexAcc (alex_action_12))],[(AlexAcc (alex_action_13))],[(AlexAccSkip)],[(AlexAccSkip)],[(AlexAccSkip)],[(AlexAcc (alex_action_15))],[(AlexAcc (alex_action_16))],[(AlexAcc (alex_action_16))],[(AlexAcc (alex_action_17))],[(AlexAcc (alex_action_18))],[(AlexAcc (alex_action_19))],[(AlexAcc (alex_action_20))],[(AlexAcc (alex_action_21))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_23))],[(AlexAcc (alex_action_24))],[(AlexAcc (alex_action_25))],[(AlexAcc (alex_action_26))],[(AlexAcc (alex_action_27))],[(AlexAcc (alex_action_28))],[(AlexAcc (alex_action_29))],[(AlexAcc (alex_action_30))],[(AlexAcc (alex_action_31))],[(AlexAcc (alex_action_32))],[(AlexAcc (alex_action_33))],[(AlexAcc (alex_action_34))],[(AlexAcc (alex_action_35))],[(AlexAcc (alex_action_36))],[(AlexAcc (alex_action_37))],[(AlexAcc (alex_action_38))],[(AlexAcc (alex_action_39))],[(AlexAcc (alex_action_40))],[(AlexAcc (alex_action_41))],[(AlexAcc (alex_action_42))],[(AlexAcc (alex_action_43))],[(AlexAcc (alex_action_44))]]
+alex_accept = listArray (0::Int,92) [AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccSkip,AlexAcc (alex_action_1),AlexAcc (alex_action_2),AlexAcc (alex_action_2),AlexAcc (alex_action_3),AlexAcc (alex_action_4),AlexAcc (alex_action_4),AlexAcc (alex_action_5),AlexAcc (alex_action_6),AlexAcc (alex_action_7),AlexAcc (alex_action_7),AlexAcc (alex_action_8),AlexAcc (alex_action_8),AlexAcc (alex_action_9),AlexAcc (alex_action_9),AlexAcc (alex_action_10),AlexAcc (alex_action_10),AlexAcc (alex_action_11),AlexAcc (alex_action_12),AlexAcc (alex_action_12),AlexAcc (alex_action_12),AlexAcc (alex_action_13),AlexAccSkip,AlexAccSkip,AlexAccSkip,AlexAcc (alex_action_15),AlexAcc (alex_action_16),AlexAcc (alex_action_16),AlexAcc (alex_action_17),AlexAcc (alex_action_18),AlexAcc (alex_action_19),AlexAcc (alex_action_20),AlexAcc (alex_action_21),AlexAcc (alex_action_22),AlexAcc (alex_action_23),AlexAcc (alex_action_24),AlexAcc (alex_action_25),AlexAcc (alex_action_26),AlexAcc (alex_action_27),AlexAcc (alex_action_28),AlexAcc (alex_action_29),AlexAcc (alex_action_30),AlexAcc (alex_action_31),AlexAcc (alex_action_32),AlexAcc (alex_action_33),AlexAcc (alex_action_34),AlexAcc (alex_action_35),AlexAcc (alex_action_36),AlexAcc (alex_action_37),AlexAcc (alex_action_38),AlexAcc (alex_action_39),AlexAcc (alex_action_40),AlexAcc (alex_action_41),AlexAcc (alex_action_42),AlexAcc (alex_action_43),AlexAcc (alex_action_44)]
 {-# LINE 99 "Language/Lua/Lexer.x" #-}
 
 
@@ -505,19 +505,19 @@ alex_action_44 =  tok LTokEof
 -- -----------------------------------------------------------------------------
 -- INTERNALS and main scanner engine
 
-{-# LINE 37 "templates/GenericTemplate.hs" #-}
+{-# LINE 35 "templates/GenericTemplate.hs" #-}
 
-{-# LINE 47 "templates/GenericTemplate.hs" #-}
+{-# LINE 45 "templates/GenericTemplate.hs" #-}
 
-{-# LINE 68 "templates/GenericTemplate.hs" #-}
+{-# LINE 66 "templates/GenericTemplate.hs" #-}
 alexIndexInt16OffAddr arr off = arr ! off
 
 
-{-# LINE 89 "templates/GenericTemplate.hs" #-}
+{-# LINE 87 "templates/GenericTemplate.hs" #-}
 alexIndexInt32OffAddr arr off = arr ! off
 
 
-{-# LINE 100 "templates/GenericTemplate.hs" #-}
+{-# LINE 98 "templates/GenericTemplate.hs" #-}
 quickIndex arr i = arr ! i
 
 
@@ -577,35 +577,40 @@ alex_scan_tkn user orig_input len input s last_acc =
 
 
 
-	let
-		(base) = alexIndexInt32OffAddr alex_base s
-		((ord_c)) = fromIntegral c
-		(offset) = (base + ord_c)
-		(check)  = alexIndexInt16OffAddr alex_check offset
+      case fromIntegral c of { (ord_c) ->
+        let
+                base   = alexIndexInt32OffAddr alex_base s
+                offset = (base + ord_c)
+                check  = alexIndexInt16OffAddr alex_check offset
 		
-		(new_s) = if (offset >= (0)) && (check == ord_c)
+                new_s = if (offset >= (0)) && (check == ord_c)
 			  then alexIndexInt16OffAddr alex_table offset
 			  else alexIndexInt16OffAddr alex_deflt s
 	in
-	case new_s of 
+        case new_s of
 	    (-1) -> (new_acc, input)
 		-- on an error, we want to keep the input *before* the
 		-- character that failed, not after.
     	    _ -> alex_scan_tkn user orig_input (if c < 0x80 || c >= 0xC0 then (len + (1)) else len)
                                                 -- note that the length is increased ONLY if this is the 1st byte in a char encoding)
 			new_input new_s new_acc
-
+      }
   where
-	check_accs [] = last_acc
-	check_accs (AlexAcc a : _) = AlexLastAcc a input (len)
-	check_accs (AlexAccSkip : _)  = AlexLastSkip  input (len)
-	check_accs (AlexAccPred a predx : rest)
+	check_accs (AlexAccNone) = last_acc
+	check_accs (AlexAcc a  ) = AlexLastAcc a input (len)
+	check_accs (AlexAccSkip) = AlexLastSkip  input (len)
+
+	check_accs (AlexAccPred a predx rest)
 	   | predx user orig_input (len) input
 	   = AlexLastAcc a input (len)
-	check_accs (AlexAccSkipPred predx : rest)
+	   | otherwise
+	   = check_accs rest
+	check_accs (AlexAccSkipPred predx rest)
 	   | predx user orig_input (len) input
 	   = AlexLastSkip input (len)
-	check_accs (_ : rest) = check_accs rest
+	   | otherwise
+	   = check_accs rest
+
 
 data AlexLastAcc a
   = AlexNone
@@ -618,10 +623,12 @@ instance Functor AlexLastAcc where
     fmap f (AlexLastSkip x y) = AlexLastSkip x y
 
 data AlexAcc a user
-  = AlexAcc a
+  = AlexAccNone
+  | AlexAcc a
   | AlexAccSkip
-  | AlexAccPred a (AlexAccPred user)
-  | AlexAccSkipPred (AlexAccPred user)
+
+  | AlexAccPred a   (AlexAccPred user) (AlexAcc a user)
+  | AlexAccSkipPred (AlexAccPred user) (AlexAcc a user)
 
 type AlexAccPred user = user -> AlexInput -> Int -> AlexInput -> Bool
 
@@ -647,6 +654,7 @@ alexRightContext (sc) user _ _ input =
 	-- TODO: there's no need to find the longest
 	-- match when checking the right context, just
 	-- the first match will do.
+
 
 -- used by wrappers
 iUnbox (i) = i
