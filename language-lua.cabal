@@ -1,5 +1,5 @@
 Name:                language-lua
-Description:         Lua 5.2 lexer, parser and pretty-printer.
+Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<https://osa1.github.com/language-lua>)
                      .
                      Changelog:
                      .

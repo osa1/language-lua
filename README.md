@@ -3,6 +3,8 @@ language-lua - Lua 5.2 lexer, parser and pretty-printer
 
 This package is just like any other *language x* packages. It provides lexer, parser and pretty-printer for [Lua](http://www.lua.org/) programming language.
 
+[Haddock documentation](https://osa1.github.io/language-lua)
+
 ### Usage
 
 This module provides 3 parsers.
