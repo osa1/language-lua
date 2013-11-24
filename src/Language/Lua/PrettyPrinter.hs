@@ -5,7 +5,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 -- | Lua pretty-printer.
-module Language.Lua.PrettyPrinter (pprint, LPretty) where
+module Language.Lua.PrettyPrinter
+  ( pprint
+  , renderPretty
+  , displayS
+  , displayIO
+  , LPretty
+  ) where
 
 import Prelude hiding (EQ, GT, LT)
 import Text.PrettyPrint.Leijen hiding ((<$>))
@@ -42,7 +48,11 @@ instance LPretty (Exp a) where
     pprint (EFunDef _ f)      = pprint f
     pprint (PrefixExp _ pe)   = pprint pe
     pprint (TableConst _ t)   = pprint t
+
+    pprint (Binop _ op@And{} e1 e2) = group (nest 4 (pprint e1 <+> pprint op <$> pprint e2))
+    pprint (Binop _ op@Or{} e1 e2) = group (nest 4 (pprint e1 <+> pprint op <$> pprint e2))
     pprint (Binop _ op e1 e2) = pprint e1 <+> pprint op <+> pprint e2
+
     pprint (Unop _ op e)      = pprint op <> pprint e
 
 instance LPretty (Var a) where
@@ -86,10 +96,10 @@ instance LPretty (TableField a) where
     pprint (Field _ e)           = pprint e
 
 instance LPretty (Block a) where
-    pprint (Block _ stats ret)
-        = case stats of
-            [] -> ret'
-            _  -> (foldr (<$>) empty (map pprint stats)) <$> ret'
+    pprint (Block _ stats ret) =
+      case stats of
+        [] -> ret'
+        _  -> vsep (map pprint stats) <$> ret'
       where ret' = case ret of
                      Nothing -> empty
                      Just e  -> nest 2 (text "return" </> (intercalate comma (map pprint e)))
@@ -107,30 +117,33 @@ instance LPretty (FunBody a) where
     pprint funbody = pprintFunction Nothing funbody
 
 pprintFunction :: Maybe Doc -> FunBody a -> Doc
-pprintFunction funname (FunBody _ args vararg block)
-    = group (header <$> indent 4 body <$> text "end")
+pprintFunction funname (FunBody _ args vararg block) =
+    group (nest 4 (header <$> body) <$> text "end")
   where
-    header = group (nest 2 (case funname of
-                              Nothing -> text "function" </> align (nest 1 args')
-                              Just n  -> text "function" <+> n </> align (nest 1 args')))
+    header = case funname of
+               Nothing -> text "function" <+> args'
+               Just n  -> text "function" <+> n <> args'
 
     vararg' = case vararg of
                 Nothing -> []
                 Just pos -> [Name pos "..."]
 
-    args' = parens (align (cat (punctuate (comma <> space)
-                                    (map pprint (args ++ vararg')))))
+    args' = parens $ case args ++ vararg' of
+                       [] -> empty
+                       l  -> nest 2 (foldr1 (</>) (punctuate comma (map pprint l)))
 
     body = pprint block
 
     end = text "end"
 
 instance LPretty (FunCall a) where
-    pprint (NormalFunCall _ pe arg)     = group (pprint pe <> pprint arg)
-    pprint (MethodCall _ pe method arg) = group (pprint pe <//> (colon <> pprint method) <> pprint arg)
+    pprint (NormalFunCall _ pe arg)     = nest 4 (group (pprint pe <> pprint arg))
+    pprint (MethodCall _ pe method arg) = nest 4 (group (pprint pe <//> colon <> pprint method <> pprint arg))
 
 instance LPretty (FunArg a) where
-    pprint (Args _ exps)   = parens (align (cat (punctuate (comma <> space) (map pprint exps))))
+    pprint (Args _ exps)   = case map pprint exps of
+                               [] -> parens empty
+                               l  -> parens (foldr1 (</>) (punctuate comma l))
     pprint (TableArg _ t)  = pprint t
     pprint (StringArg _ s) = dquotes (text s)
 
