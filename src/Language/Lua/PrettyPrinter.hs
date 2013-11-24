@@ -152,18 +152,14 @@ instance LPretty (Stat a) where
         = nest 4 (text "repeat" </> pprint block) </> (nest 4 (text "until" </> pprint guard))
 
     pprint (If _ cases elsePart) = group (printIf cases elsePart)
-      where printIf ((guard, block):xs) e
-                =   group (nest 4 (text "if" <+> pprint guard <+> text "then"
-                        <$> pprint block))
-                <$> printIf' xs e
+      where
+        printIf ((guard, block) : xs) e =
+          nest 4 (text "if" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
 
-            printIf' [] Nothing  = text "end"
-            printIf' [] (Just b) = group (nest 4 (text "else" </> pprint b)
-                                         <$> text "end")
-            printIf' ((guard, block):xs) e
-                =   group (nest 4 (text "elseif" <+> pprint guard <+> text "then"
-                        <$> pprint block))
-                <$> printIf' xs e
+        printIf' [] Nothing  = text "end"
+        printIf' [] (Just b) = nest 4 (text "else" <$> pprint b) <$> text "end"
+        printIf' ((guard, block) : xs) e =
+          nest 4 (text "elseif" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
 
     pprint (ForRange _ name e1 e2 e3 block)
         =   text "for" <+> pprint name <> equals <> pprint e1 <> comma <> pprint e2 <> e3' <+> text "do"
