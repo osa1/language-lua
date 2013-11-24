@@ -48,7 +48,7 @@ instance LPretty (Exp a) where
 instance LPretty (Var a) where
     pprint (VarName _ n)          = pprint n
     pprint (Select _ pe e)        = pprint pe <> brackets (pprint e)
-    pprint (SelectName _ pe name) = group (pprint pe <$$> (char '.' <> pprint name))
+    pprint (SelectName _ pe name) = group (nest 4 (pprint pe <//> (char '.' <> pprint name)))
 
 instance LPretty (Binop a) where
     pprint Add{}    = char '+'
@@ -108,24 +108,29 @@ instance LPretty (FunBody a) where
 
 pprintFunction :: Maybe Doc -> FunBody a -> Doc
 pprintFunction funname (FunBody _ args vararg block)
-    = group (nest 4 (funhead <$> funbody) <$> end)
-  where funhead = case funname of
-                    Nothing -> nest 2 (text "function" </> args')
-                    Just n  -> nest 2 (text "function" </> n </> args')
-        vararg' = case vararg of
-                    Nothing -> []
-                    Just pos -> [Name pos "..."]
-        args' = parens (align (cat (punctuate (comma <> space)
-                                        (map pprint (args ++ vararg')))))
-        funbody = pprint block
-        end = text "end"
+    = group (header <$> indent 4 body <$> text "end")
+  where
+    header = group (nest 2 (case funname of
+                              Nothing -> text "function" </> align (nest 1 args')
+                              Just n  -> text "function" <+> n </> align (nest 1 args')))
+
+    vararg' = case vararg of
+                Nothing -> []
+                Just pos -> [Name pos "..."]
+
+    args' = parens (align (cat (punctuate (comma <> space)
+                                    (map pprint (args ++ vararg')))))
+
+    body = pprint block
+
+    end = text "end"
 
 instance LPretty (FunCall a) where
-    pprint (NormalFunCall _ pe arg)     = group (nest 4 (pprint pe <$$> pprint arg))
-    pprint (MethodCall _ pe method arg) = group (nest 4 (pprint pe <$$> (colon <> pprint method) <$$> pprint arg))
+    pprint (NormalFunCall _ pe arg)     = group (pprint pe <> pprint arg)
+    pprint (MethodCall _ pe method arg) = group (pprint pe <//> (colon <> pprint method) <> pprint arg)
 
 instance LPretty (FunArg a) where
-    pprint (Args _ exps)   = parens (nest 4 (cat (punctuate (comma <> space) (map pprint exps))))
+    pprint (Args _ exps)   = parens (align (cat (punctuate (comma <> space) (map pprint exps))))
     pprint (TableArg _ t)  = pprint t
     pprint (StringArg _ s) = dquotes (text s)
 
@@ -177,7 +182,7 @@ instance LPretty (Stat a) where
     pprint (FunAssign _ name body) = pprintFunction (Just (pprint name)) body
     pprint (LocalFunAssign _ name body) = text "local" <+> pprintFunction (Just (pprint name)) body
     pprint (LocalAssign _ names exps)
-        = text "local" <+> (intercalate comma (map pprint names)) <+> equals <+> exps'
+        = text "local" <+> (intercalate comma (map pprint names)) <+> equals </> exps'
       where exps' = case exps of
                       Nothing -> empty
                       Just es -> intercalate comma (map pprint es)

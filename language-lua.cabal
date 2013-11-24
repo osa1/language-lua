@@ -3,10 +3,14 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      .
                      Changelog:
                      .
+                     \0.2.1:
+                     .
+                     - Some tweaks in pretty-printer.
+                     .
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.2.0
+Version:             0.2.1
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
