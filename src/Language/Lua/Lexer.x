@@ -169,7 +169,7 @@ testAndEndComment _ _ = do
   ss <- getStringState
   if ss then alexMonadScan' else endComment >> alexSetStartCode 0 >> alexMonadScan'
 
-testAndEndString ::AlexAction LTok
+testAndEndString :: AlexAction LTok
 testAndEndString (_,_,_,s) len = do
   startlen <- getStringDelimLen
   if startlen /= len
