@@ -53,8 +53,8 @@ tokens :-
     <0> @hexprefix @hexdigits @expparthex    { tokWValue LTokNum }
     <0> @hexprefix @mantparthex @expparthex? { tokWValue LTokNum }
 
-    <0> \"($dqstr|@charescd)*\" { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), Right posn) }
-    <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), Right posn) }
+    <0> \"($dqstr|@charescd)*\" { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), posn) }
+    <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), posn) }
 
     -- long strings
     <0> \[ \=* \[ \n?        { enterString `andBegin` state_string }
@@ -185,25 +185,25 @@ testAndEndString (_,_,_,s) len = do
               else do
                 val  <- getStringValue
                 posn <- getStringPosn
-                return (LTokSLit (reverse val), Right posn)
+                return (LTokSLit (reverse val), posn)
 
 data EOF = EOF deriving Show
 
 -- | Lua token with position information.
-type LTok = (LToken, Either EOF AlexPosn)
+type LTok = (LToken, AlexPosn)
 
 -- type AlexAction result = AlexInput -> Int -> Alex result
 
 -- Helper to make LTokens with string value (like LTokNum, LTokSLit etc.)
 tokWValue :: (String -> LToken) -> AlexInput -> Int -> Alex LTok
-tokWValue tok (posn,_,_,s) len = return (tok (take len s), Right posn)
+tokWValue tok (posn,_,_,s) len = return (tok (take len s), posn)
 
 tok :: LToken -> AlexInput -> Int -> Alex LTok
-tok t (posn,_,_,_) _ = return (t, Right posn)
+tok t (posn,_,_,_) _ = return (t, posn)
 
 {-# INLINE ident #-}
 ident :: AlexAction LTok
-ident (posn,_,_,s) len = return (tok, Right posn)
+ident (posn,_,_,s) len = return (tok, posn)
   where tok = case (take len s) of
           "and"      -> LTokAnd
           "break"    -> LTokBreak
@@ -239,7 +239,7 @@ ident (posn,_,_,s) len = return (tok, Right posn)
 --                  String)       -- current input string
 
 alexEOF :: Alex LTok
-alexEOF = return (LTokEof, Left EOF)
+alexEOF = return (LTokEof, AlexPn (-1) (-1) (-1))
 
 alexMonadScan' :: Alex LTok
 alexMonadScan' = do

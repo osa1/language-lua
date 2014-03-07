@@ -16,9 +16,8 @@ type Parser = Parsec [LTok] ()
 satisfy :: (Stream [LTok] m LTok) => (LTok -> Bool) -> ParsecT [LTok] u m LToken
 satisfy f = tokenPrim show nextPos tokeq
   where nextPos :: SourcePos -> LTok -> [LTok] -> SourcePos
-        nextPos pos _ ((_, (Right (AlexPn _ l c))):_) = setSourceColumn (setSourceLine pos l) c
-        nextPos pos _ ((_, (Left _)):_)               = pos -- TODO: ??
-        nextPos pos _ []                              = pos
+        nextPos pos _ ((_, AlexPn _ l c):_) = setSourceColumn (setSourceLine pos l) c
+        nextPos pos _ []                    = pos
 
         tokeq :: LTok -> Maybe LToken
         tokeq t = if f t then Just (fst t) else Nothing
