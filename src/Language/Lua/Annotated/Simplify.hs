@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wall #-}
-
 -- | Remove annotations.
 module Language.Lua.Annotated.Simplify where
 

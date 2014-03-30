@@ -1,4 +1,6 @@
 {
+{-# OPTIONS_GHC -w #-}
+
 module Language.Lua.Annotated.Lexer
   ( llex
   , llexFile

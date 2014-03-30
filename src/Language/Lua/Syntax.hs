@@ -3,8 +3,6 @@
 -- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
 module Language.Lua.Syntax where
 
-import qualified Language.Lua.Annotated.Syntax as A
-
 import Prelude hiding (LT, EQ, GT)
 
 type Name = String
