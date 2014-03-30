@@ -1,6 +1,6 @@
 module Language.Lua.Token (LToken(..), tokenValue) where
 
--- ^Lua tokens
+-- | Lua tokens
 data LToken = LTokPlus               -- ^+
             | LTokMinus              -- ^\-
             | LTokStar               -- ^\*
