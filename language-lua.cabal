@@ -2,7 +2,12 @@ Name:                language-lua
 Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<https://osa1.github.com/language-lua>)
                      .
                      Changelog:
+                     \0.3.0:
+                     .
+                     - Added non-annotated syntax to make code-generation easier.
+                     .
                      \0.2.3:
+                     .
                      - Minor internal changes.
                      .
                      \0.2.2:
@@ -12,7 +17,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.2.4
+Version:             0.3.0
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
@@ -52,3 +57,5 @@ Library
                      mtl >= 2.0 && < 2.2,
                      parsec >= 3.1.3 && < 3.2,
                      array >= 0.4 && < 0.6
+
+  ghc-options:       -Wall
