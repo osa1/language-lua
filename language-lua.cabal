@@ -34,15 +34,19 @@ Source-repository head
 Library
   Hs-source-dirs:    src
 
-  Exposed-modules:   Language.Lua,
-                     Language.Lua.Types,
-                     Language.Lua.Token,
-                     Language.Lua.Parser,
-                     Language.Lua.Lexer,
+  Exposed-modules:   Language.Lua
+                     Language.Lua.Token
+                     Language.Lua.Syntax
+                     Language.Lua.Parser
                      Language.Lua.PrettyPrinter
+                     Language.Lua.Annotated
+                     Language.Lua.Annotated.Syntax
+                     Language.Lua.Annotated.Parser
+                     Language.Lua.Annotated.Simplify
                      Text.Parsec.LTok
 
-  Other-modules:     Text.PrettyPrint.Leijen
+  Other-modules:     Language.Lua.Annotated.Lexer
+                     Text.PrettyPrint.Leijen
 
   Build-depends:     base >= 4.5 && < 4.8,
                      mtl >= 2.0 && < 2.2,

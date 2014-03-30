@@ -4,7 +4,7 @@
 -- | Lexer/Parsec interface
 module Text.Parsec.LTok where
 
-import Language.Lua.Lexer (LTok, AlexPosn(..))
+import Language.Lua.Annotated.Lexer (LTok, AlexPosn(..))
 import Language.Lua.Token
 
 import Text.Parsec hiding (satisfy)

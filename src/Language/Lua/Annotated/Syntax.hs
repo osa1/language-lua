@@ -1,10 +1,8 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE DeriveFunctor #-}
+
 -- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
-
 -- Annotation implementation is inspired by haskell-src-exts.
-
-module Language.Lua.Types where
+module Language.Lua.Annotated.Syntax where
 
 import Prelude hiding (LT, EQ, GT)
 

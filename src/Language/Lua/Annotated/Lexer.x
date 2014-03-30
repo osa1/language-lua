@@ -1,11 +1,12 @@
 {
-module Language.Lua.Lexer
+module Language.Lua.Annotated.Lexer
   ( llex
   , llexFile
   , LTok
   , AlexPosn(..)
   ) where
 
+import Language.Lua.Annotated.Syntax
 import Language.Lua.Token
 import Control.Applicative ((<$>))
 import Control.Monad (forM_, unless, when)

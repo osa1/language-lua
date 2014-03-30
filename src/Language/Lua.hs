@@ -1,19 +1,14 @@
 module Language.Lua
-  ( parseText
+  ( module Language.Lua.Syntax
+  , parseText
   , parseFile
-  , llex
-  , llexFile
   , stat
   , exp
   , chunk
-  , Block(..)
-  , Stat(..)
-  , Exp(..)
   , pprint
   ) where
 
 import Prelude hiding (exp)
-import Language.Lua.Types
-import Language.Lua.Lexer
+import Language.Lua.Syntax
 import Language.Lua.Parser
 import Language.Lua.PrettyPrinter
