@@ -31,9 +31,9 @@ data Exp
     | Number String
     | String String
     | Vararg -- ^/.../
-    | EFunDef FunDef -- ^/function (..) .. end/
+    | EFunDef FunBody -- ^/function (..) .. end/
     | PrefixExp PrefixExp
-    | TableConst Table -- ^table constructor
+    | TableConst [TableField] -- ^table constructor
     | Binop Binop Exp Exp -- ^binary operators, /+ - * ^ % .. < <= > >= == ~= and or/
     | Unop Unop Exp -- ^unary operators, /- not #/
     deriving (Show, Eq)
@@ -57,9 +57,6 @@ data PrefixExp
     | Paren Exp
     deriving (Show, Eq)
 
-data Table = Table [TableField] -- ^list of table fields
-    deriving (Show, Eq)
-
 data TableField
     = ExpField Exp Exp -- ^/[exp] = exp/
     | NamedField Name Exp -- ^/name = exp/
@@ -73,9 +70,6 @@ data Block = Block [Stat] (Maybe [Exp])
 data FunName = FunName Name [Name] (Maybe Name)
     deriving (Show, Eq)
 
-data FunDef = FunDef FunBody
-    deriving (Show, Eq)
-
 data FunBody = FunBody [Name] Bool Block -- ^(args, vararg, block)
     deriving (Show, Eq)
 
@@ -86,6 +80,6 @@ data FunCall
 
 data FunArg
     = Args [Exp] -- ^list of args
-    | TableArg Table -- ^table constructor
+    | TableArg [TableField] -- ^table constructor
     | StringArg String -- ^string
     deriving (Show, Eq)

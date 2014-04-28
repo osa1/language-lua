@@ -83,8 +83,8 @@ instance LPretty PrefixExp where
     pprint (PEFunCall funcall) = pprint funcall
     pprint (Paren e)           = parens (pprint e)
 
-instance LPretty Table where
-    pprint (Table fields) = braces (nest 4 (cat (punctuate comma (map pprint fields))))
+instance LPretty [TableField] where
+    pprint fields = braces (nest 4 (cat (punctuate comma (map pprint fields))))
 
 instance LPretty TableField where
     pprint (ExpField e1 e2)    = brackets (pprint e1) <+> equals <+> pprint e2
@@ -105,9 +105,6 @@ instance LPretty FunName where
       where method' = case methods of
                         Nothing -> empty
                         Just m' -> char ':' <> pprint m'
-
-instance LPretty FunDef where
-    pprint (FunDef body) = pprint body
 
 instance LPretty FunBody where
     pprint funbody = pprintFunction Nothing funbody

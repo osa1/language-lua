@@ -59,16 +59,16 @@ sFunBody :: A.FunBody a -> FunBody
 sFunBody (A.FunBody _ ns vararg b) =
     FunBody (map sName ns) (maybe False (const True) vararg) (sBlock b)
 
-sFunDef :: A.FunDef a -> FunDef
-sFunDef (A.FunDef _ fb) = FunDef (sFunBody fb)
+sFunDef :: A.FunDef a -> FunBody
+sFunDef (A.FunDef _ fb) = sFunBody fb
 
 sPrefixExp :: A.PrefixExp a -> PrefixExp
 sPrefixExp (A.PEVar _ v) = PEVar (sVar v)
 sPrefixExp (A.PEFunCall _ fc) = PEFunCall (sFunCall fc)
 sPrefixExp (A.Paren _ e) = Paren (sExp e)
 
-sTable :: A.Table a -> Table
-sTable (A.Table _ fs) = Table (map sTableField fs)
+sTable :: A.Table a -> [TableField]
+sTable (A.Table _ fs) = map sTableField fs
 
 sBinop :: A.Binop a -> Binop
 sBinop A.Add{} = Add
