@@ -44,17 +44,13 @@ instance LPretty Exp where
     pprint (EFunDef f)    = pprint f
     pprint (PrefixExp pe) = pprint pe
     pprint (TableConst t) = pprint t
-
-    pprint (Binop op@And e1 e2) = group (nest 4 (pprint e1 <+> pprint op <$> pprint e2))
-    pprint (Binop op@Or e1 e2)  = group (nest 4 (pprint e1 <+> pprint op <$> pprint e2))
-    pprint (Binop op e1 e2)     = pprint e1 <+> pprint op <+> pprint e2
-
-    pprint (Unop op e)      = pprint op <> pprint e
+    pprint (Binop op e1 e2) = group (pprint e1 <+> pprint op <$> pprint e2)
+    pprint (Unop op e)    = pprint op <> pprint e
 
 instance LPretty Var where
     pprint (VarName n)          = pprint n
-    pprint (Select pe e)        = pprint pe <> brackets (pprint e)
-    pprint (SelectName pe name) = group (nest 4 (pprint pe <//> (char '.' <> pprint name)))
+    pprint (Select pe e)        = pprint pe <> align (brackets (pprint e))
+    pprint (SelectName pe name) = pprint pe <//> (char '.' <> pprint name)
 
 instance LPretty Binop where
     pprint Add    = char '+'
@@ -84,7 +80,7 @@ instance LPretty PrefixExp where
     pprint (Paren e)           = parens (pprint e)
 
 instance LPretty [TableField] where
-    pprint fields = braces (nest 4 (cat (punctuate comma (map pprint fields))))
+    pprint fields = braces (align (cat (punctuate comma (map pprint fields))))
 
 instance LPretty TableField where
     pprint (ExpField e1 e2)    = brackets (pprint e1) <+> equals <+> pprint e2
@@ -116,25 +112,18 @@ pprintFunction funname (FunBody args vararg block) =
     header = case funname of
                Nothing -> text "function" <+> args'
                Just n  -> text "function" <+> n <> args'
-
     vararg' = if vararg then ["..."] else []
-
-    args' = parens $ case args ++ vararg' of
-                       [] -> empty
-                       l  -> nest 2 (foldr1 (</>) (punctuate comma (map pprint l)))
-
+    args' = parens (align (cat (punctuate (comma <> space) (map pprint (args ++ vararg')))))
     body = pprint block
-
     end = text "end"
 
 instance LPretty FunCall where
-    pprint (NormalFunCall pe arg)     = nest 4 (group (pprint pe <> pprint arg))
-    pprint (MethodCall pe method arg) = nest 4 (group (pprint pe <//> colon <> pprint method <> pprint arg))
+    pprint (NormalFunCall pe arg)     = pprint pe <> pprint arg
+    pprint (MethodCall pe method arg) = pprint pe <//> colon <> pprint method <> pprint arg
 
 instance LPretty FunArg where
-    pprint (Args exps)   = case map pprint exps of
-                             [] -> parens empty
-                             l  -> parens (foldr1 (</>) (punctuate comma l))
+    pprint (Args [fun@EFunDef{}]) = parens (pprint fun)
+    pprint (Args exps)   = parens (align (cat (punctuate (comma <> space) (map pprint exps))))
     pprint (TableArg t)  = pprint t
     pprint (StringArg s) = dquotes (text s)
 
