@@ -29,7 +29,7 @@ class LPretty a where
     pprint :: a -> Doc
 
 instance LPretty [Char] where
-    pprint s = text s
+    pprint = text
 
 instance LPretty Bool where
     pprint True  = text "true"
@@ -104,7 +104,7 @@ instance LPretty FunName where
                         Just m' -> char ':' <> pprint m'
 
 instance LPretty FunBody where
-    pprint funbody = pprintFunction Nothing funbody
+    pprint = pprintFunction Nothing
 
 pprintFunction :: Maybe Doc -> FunBody -> Doc
 pprintFunction funname (FunBody args vararg block) =
@@ -130,9 +130,9 @@ instance LPretty FunArg where
 
 instance LPretty Stat where
     pprint (Assign names vals)
-        =   (intercalate comma (map pprint names))
+        =   intercalate comma (map pprint names)
         <+> equals
-        <+> (intercalate comma (map pprint vals))
+        <+> intercalate comma (map pprint vals)
     pprint (FunCall funcall) = pprint funcall
     pprint (Label name)      = text "::" <> pprint name <> text "::"
     pprint Break             = text "break"
@@ -165,15 +165,15 @@ instance LPretty Stat where
                     Just e  -> comma <> pprint e
 
     pprint (ForIn names exps block)
-        =   text "for" <+> (intercalate comma (map pprint names))
-                <+> text "in" <+> (intercalate comma (map pprint exps)) <+> text "do"
+        =   text "for" <+> intercalate comma (map pprint names)
+                <+> text "in" <+> intercalate comma (map pprint exps) <+> text "do"
         <$> indent 4 (pprint block)
         <$> text "end"
 
     pprint (FunAssign name body) = pprintFunction (Just (pprint name)) body
     pprint (LocalFunAssign name body) = text "local" <+> pprintFunction (Just (pprint name)) body
     pprint (LocalAssign names exps)
-        = text "local" <+> (intercalate comma (map pprint names)) <+> exps'
+        = text "local" <+> intercalate comma (map pprint names) <+> exps'
       where exps' = case exps of
                       Nothing -> empty
                       Just es -> equals </> intercalate comma (map pprint es)
