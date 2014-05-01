@@ -80,7 +80,7 @@ instance LPretty PrefixExp where
     pprint (Paren e)           = parens (pprint e)
 
 instance LPretty [TableField] where
-    pprint fields = braces (align (fillSep (punctuate (comma <> space) (map pprint fields))))
+    pprint fields = braces (align (fillSep (punctuate comma (map pprint fields))))
 
 instance LPretty TableField where
     pprint (ExpField e1 e2)    = brackets (pprint e1) <+> equals <+> pprint e2
@@ -139,11 +139,10 @@ instance LPretty Stat where
     pprint (Goto name)       = text "goto" <+> pprint name
     pprint (Do block)        = group (nest 4 (text "do" <$> pprint block) <$> text "end")
     pprint (While guard e)
-        =  text "while" <+> pprint guard <+> text "do"
-       <$> indent 4 (pprint e)
+        =  nest 4 (text "while" <+> pprint guard <+> text "do" <$> pprint e)
        <$> text "end"
     pprint (Repeat block guard)
-        =   (text "repeat" <$> indent 4 (pprint block))
+        =   nest 4 (text "repeat" <$> pprint block)
         </> nest 4 (text "until" </> pprint guard)
 
     pprint (If cases elsePart) = group (printIf cases elsePart)
@@ -157,17 +156,18 @@ instance LPretty Stat where
           nest 4 (text "elseif" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
 
     pprint (ForRange name e1 e2 e3 block)
-        =   text "for" <+> pprint name <> equals <> pprint e1 <> comma <> pprint e2 <> e3' <+> text "do"
-        <$> indent 4 (pprint block)
+        =   nest 4 (text "for" <+> pprint name <> equals <> pprint e1
+                      <> comma <> pprint e2 <> e3' <+> text "do"
+                      <$> pprint block)
         <$> text "end"
       where e3' = case e3 of
                     Nothing -> empty
                     Just e  -> comma <> pprint e
 
     pprint (ForIn names exps block)
-        =   text "for" <+> intercalate comma (map pprint names)
-                <+> text "in" <+> intercalate comma (map pprint exps) <+> text "do"
-        <$> indent 4 (pprint block)
+        =   nest 4 (text "for" <+> intercalate comma (map pprint names) <+> text "in"
+                     <+> intercalate comma (map pprint exps) <+> text "do"
+                     <$> pprint block)
         <$> text "end"
 
     pprint (FunAssign name body) = pprintFunction (Just (pprint name)) body
