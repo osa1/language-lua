@@ -2,6 +2,11 @@ Name:                language-lua
 Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<https://osa1.github.com/language-lua>)
                      .
                      Changelog:
+                     \0.4.2:
+                     .
+                     - More tweaks in pretty printer.
+                     - Started using 2 spaces for indentation(instead of 4 as before).
+                     .
                      \0.4.1:
                      .
                      - Some tweaks in pretty-printer.
@@ -29,7 +34,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.4.1
+Version:             0.4.2
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
