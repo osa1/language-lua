@@ -95,7 +95,7 @@ instance LPretty Block where
       where ret' = case ret of
                      Nothing -> empty
                      Just [fun@EFunDef{}] -> text "return" <+> pprint fun
-                     Just e  -> nest 4 (text "return" </> intercalate comma (map (align . pprint) e))
+                     Just e  -> nest 2 (text "return" </> intercalate comma (map (align . pprint) e))
 
 instance LPretty FunName where
     pprint (FunName name s methods) = cat (punctuate dot (map pprint $ name:s)) <> method'
@@ -108,7 +108,7 @@ instance LPretty FunBody where
 
 pprintFunction :: Maybe Doc -> FunBody -> Doc
 pprintFunction funname (FunBody args vararg block) =
-    group (nest 4 (header <$> body) <$> end)
+    group (nest 2 (header <$> body) <$> end)
   where
     header = case funname of
                Nothing -> text "function" <+> args'
@@ -137,26 +137,26 @@ instance LPretty Stat where
     pprint (Label name)      = text "::" <> pprint name <> text "::"
     pprint Break             = text "break"
     pprint (Goto name)       = text "goto" <+> pprint name
-    pprint (Do block)        = group (nest 4 (text "do" <$> pprint block) <$> text "end")
+    pprint (Do block)        = group (nest 2 (text "do" <$> pprint block) <$> text "end")
     pprint (While guard e)
-        =  nest 4 (text "while" <+> pprint guard <+> text "do" <$> pprint e)
+        =  nest 2 (text "while" <+> pprint guard <+> text "do" <$> pprint e)
        <$> text "end"
     pprint (Repeat block guard)
-        =   nest 4 (text "repeat" <$> pprint block)
-        </> nest 4 (text "until" </> pprint guard)
+        =   nest 2 (text "repeat" <$> pprint block)
+        </> nest 2 (text "until" </> pprint guard)
 
     pprint (If cases elsePart) = group (printIf cases elsePart)
       where
         printIf ((guard, block) : xs) e =
-          nest 4 (text "if" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
+          nest 2 (text "if" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
 
         printIf' [] Nothing  = text "end"
-        printIf' [] (Just b) = nest 4 (text "else" <$> pprint b) <$> text "end"
+        printIf' [] (Just b) = nest 2 (text "else" <$> pprint b) <$> text "end"
         printIf' ((guard, block) : xs) e =
-          nest 4 (text "elseif" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
+          nest 2 (text "elseif" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
 
     pprint (ForRange name e1 e2 e3 block)
-        =   nest 4 (text "for" <+> pprint name <> equals <> pprint e1
+        =   nest 2 (text "for" <+> pprint name <> equals <> pprint e1
                       <> comma <> pprint e2 <> e3' <+> text "do"
                       <$> pprint block)
         <$> text "end"
@@ -165,7 +165,7 @@ instance LPretty Stat where
                     Just e  -> comma <> pprint e
 
     pprint (ForIn names exps block)
-        =   nest 4 (text "for" <+> intercalate comma (map pprint names) <+> text "in"
+        =   nest 2 (text "for" <+> intercalate comma (map pprint names) <+> text "in"
                      <+> intercalate comma (map pprint exps) <+> text "do"
                      <$> pprint block)
         <$> text "end"
