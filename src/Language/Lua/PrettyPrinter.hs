@@ -124,7 +124,7 @@ instance LPretty FunCall where
 
 instance LPretty FunArg where
     pprint (Args [fun@EFunDef{}]) = parens (pprint fun)
-    pprint (Args exps)   = parens (align (fillSep (punctuate (comma <> space) (map (align . pprint) exps))))
+    pprint (Args exps)   = parens (align (fillSep (punctuate comma (map (align . pprint) exps))))
     pprint (TableArg t)  = pprint t
     pprint (StringArg s) = dquotes (text s)
 
