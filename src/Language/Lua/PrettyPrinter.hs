@@ -80,7 +80,7 @@ instance LPretty PrefixExp where
     pprint (Paren e)           = parens (pprint e)
 
 instance LPretty [TableField] where
-    pprint fields = braces (align (cat (punctuate comma (map pprint fields))))
+    pprint fields = braces (align (fillSep (punctuate (comma <> space) (map pprint fields))))
 
 instance LPretty TableField where
     pprint (ExpField e1 e2)    = brackets (pprint e1) <+> equals <+> pprint e2
@@ -94,7 +94,8 @@ instance LPretty Block where
         _  -> vsep (map pprint stats) <$> ret'
       where ret' = case ret of
                      Nothing -> empty
-                     Just e  -> nest 2 (text "return" </> (intercalate comma (map pprint e)))
+                     Just [fun@EFunDef{}] -> text "return" <+> pprint fun
+                     Just e  -> nest 4 (text "return" </> intercalate comma (map (align . pprint) e))
 
 instance LPretty FunName where
     pprint (FunName name s methods) = cat (punctuate dot (map pprint $ name:s)) <> method'
@@ -123,7 +124,7 @@ instance LPretty FunCall where
 
 instance LPretty FunArg where
     pprint (Args [fun@EFunDef{}]) = parens (pprint fun)
-    pprint (Args exps)   = parens (align (cat (punctuate (comma <> space) (map pprint exps))))
+    pprint (Args exps)   = parens (align (fillSep (punctuate (comma <> space) (map (align . pprint) exps))))
     pprint (TableArg t)  = pprint t
     pprint (StringArg s) = dquotes (text s)
 
@@ -138,11 +139,12 @@ instance LPretty Stat where
     pprint (Goto name)       = text "goto" <+> pprint name
     pprint (Do block)        = group (nest 4 (text "do" <$> pprint block) <$> text "end")
     pprint (While guard e)
-        =  (nest 4 (text "while" <+> pprint guard <+> text "do"
-                   </> indent 4 (pprint e)))
-       </> text "end"
+        =  text "while" <+> pprint guard <+> text "do"
+       <$> indent 4 (pprint e)
+       <$> text "end"
     pprint (Repeat block guard)
-        = nest 4 (text "repeat" </> pprint block) </> (nest 4 (text "until" </> pprint guard))
+        =   (text "repeat" <$> indent 4 (pprint block))
+        </> nest 4 (text "until" </> pprint guard)
 
     pprint (If cases elsePart) = group (printIf cases elsePart)
       where
@@ -171,8 +173,8 @@ instance LPretty Stat where
     pprint (FunAssign name body) = pprintFunction (Just (pprint name)) body
     pprint (LocalFunAssign name body) = text "local" <+> pprintFunction (Just (pprint name)) body
     pprint (LocalAssign names exps)
-        = text "local" <+> (intercalate comma (map pprint names)) <+> equals </> exps'
+        = text "local" <+> (intercalate comma (map pprint names)) <+> exps'
       where exps' = case exps of
                       Nothing -> empty
-                      Just es -> intercalate comma (map pprint es)
+                      Just es -> equals </> intercalate comma (map pprint es)
     pprint EmptyStat = empty
