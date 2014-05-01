@@ -2,6 +2,10 @@ Name:                language-lua
 Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<https://osa1.github.com/language-lua>)
                      .
                      Changelog:
+                     \0.4.1:
+                     .
+                     - Some tweaks in pretty-printer.
+                     .
                      \0.4.0:
                      .
                      - `Table` and `FunDef` nodes are removed from simplified syntax.
@@ -25,7 +29,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.4.0
+Version:             0.4.1
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
