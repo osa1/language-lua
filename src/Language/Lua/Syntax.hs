@@ -1,9 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 -- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
 module Language.Lua.Syntax where
 
 import Prelude hiding (LT, EQ, GT)
+import Data.Data
 
 type Name = String
 
@@ -23,7 +25,7 @@ data Stat
     | LocalFunAssign Name FunBody -- ^local function \<var\> (..) .. end
     | LocalAssign [Name] (Maybe [Exp]) -- ^local var1, var2 .. = exp1, exp2 ..
     | EmptyStat -- ^/;/
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data Exp
     = Nil
@@ -36,50 +38,50 @@ data Exp
     | TableConst [TableField] -- ^table constructor
     | Binop Binop Exp Exp -- ^binary operators, /+ - * ^ % .. < <= > >= == ~= and or/
     | Unop Unop Exp -- ^unary operators, /- not #/
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data Var
     = VarName Name -- ^variable
     | Select PrefixExp Exp -- ^/table[exp]/
     | SelectName PrefixExp Name -- ^/table.variable/
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data Binop = Add | Sub | Mul | Div | Exp | Mod | Concat
     | LT | LTE | GT | GTE | EQ | NEQ | And | Or
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data Unop = Neg | Not | Len
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data PrefixExp
     = PEVar Var
     | PEFunCall FunCall
     | Paren Exp
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data TableField
     = ExpField Exp Exp -- ^/[exp] = exp/
     | NamedField Name Exp -- ^/name = exp/
     | Field Exp
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 -- | A block is list of statements with optional return statement.
 data Block = Block [Stat] (Maybe [Exp])
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data FunName = FunName Name [Name] (Maybe Name)
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data FunBody = FunBody [Name] Bool Block -- ^(args, vararg, block)
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data FunCall
     = NormalFunCall PrefixExp FunArg -- ^/prefixexp ( funarg )/
     | MethodCall PrefixExp Name FunArg -- ^/prefixexp : name ( funarg )/
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
 
 data FunArg
     = Args [Exp] -- ^list of args
     | TableArg [TableField] -- ^table constructor
     | StringArg String -- ^string
-    deriving (Show, Eq)
+    deriving (Show, Eq, Data, Typeable)
