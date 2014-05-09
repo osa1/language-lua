@@ -44,7 +44,7 @@ instance LPretty Exp where
     pprint (EFunDef f)    = pprint f
     pprint (PrefixExp pe) = pprint pe
     pprint (TableConst t) = pprint t
-    pprint (Binop op e1 e2) = group (pprint e1 <+> pprint op <$> pprint e2)
+    pprint (Binop op e1 e2) = group (pprint e1 <+> pprint op <+> pprint e2)
     pprint (Unop op e)    = pprint op <> pprint e
 
 instance LPretty Var where
