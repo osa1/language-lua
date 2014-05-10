@@ -25,8 +25,14 @@ infixr 5 <$>
 x <$> y | isEmpty y = x
         | otherwise = x <> line <> y
 
+type Precedence = Int
+
 class LPretty a where
     pprint :: a -> Doc
+    pprint = pprint' 0
+
+    pprint' :: Precedence -> a -> Doc
+    pprint' _ = pprint
 
 instance LPretty [Char] where
     pprint = text
@@ -36,16 +42,22 @@ instance LPretty Bool where
     pprint False = text "false"
 
 instance LPretty Exp where
-    pprint Nil            = text "nil"
-    pprint (Bool s)       = pprint s
-    pprint (Number n)     = text n
-    pprint (String s)     = dquotes (text s)
-    pprint Vararg         = text "..."
-    pprint (EFunDef f)    = pprint f
-    pprint (PrefixExp pe) = pprint pe
-    pprint (TableConst t) = pprint t
-    pprint (Binop op e1 e2) = group (pprint e1 <+> pprint op <+> pprint e2)
-    pprint (Unop op e)    = pprint op <> pprint e
+    pprint' _ Nil            = text "nil"
+    pprint' _ (Bool s)       = pprint s
+    pprint' _ (Number n)     = text n
+    pprint' _ (String s)     = dquotes (text s)
+    pprint' _ Vararg         = text "..."
+    pprint' _ (EFunDef f)    = pprint f
+    pprint' _ (PrefixExp pe) = pprint pe
+    pprint' _ (TableConst t) = pprint t
+    pprint' p (Binop op e1 e2) = ps (pprint' opPrec e1 <+> pprint op <+> pprint' opPrec e2)
+      where
+        opPrec = getBinopPrec op
+        ps = if opPrec < p then parens else id
+    pprint' p (Unop op e)    = ps (pprint op <> pprint' opPrec e)
+      where
+        opPrec = getUnopPrec op
+        ps = if opPrec < p then parens else id
 
 instance LPretty Var where
     pprint (VarName n)          = pprint n
@@ -73,6 +85,28 @@ instance LPretty Unop where
     pprint Neg = char '-'
     pprint Not = text "not "
     pprint Len = char '#'
+
+getBinopPrec :: Binop -> Precedence
+getBinopPrec op =
+    case op of
+      Add -> 5
+      Sub -> 5
+      Mul -> 6
+      Div -> 6
+      Exp -> 8
+      Mod -> 6
+      Concat -> 4
+      LT -> 3
+      LTE -> 3
+      GT -> 3
+      GTE -> 3
+      EQ -> 3
+      NEQ -> 3
+      And -> 2
+      Or -> 1
+
+getUnopPrec :: Unop -> Precedence
+getUnopPrec = const 7
 
 instance LPretty PrefixExp where
     pprint (PEVar var)         = pprint var
