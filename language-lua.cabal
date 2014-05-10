@@ -2,6 +2,12 @@ Name:                language-lua
 Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<https://osa1.github.com/language-lua>)
                      .
                      Changelog:
+                     .
+                     \0.4.4:
+                     .
+                     - Printer now takes operator precedences into account while printing `Binop` and `Unop` expressions and prints parenthesis as necessary.
+                     - Printer now does not put line break in `Binop` expressions.
+                     .
                      \0.4.3:
                      .
                      - `Data` and `Typeable` instances are implemented for syntax tree.
@@ -39,7 +45,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.4.3
+Version:             0.4.4
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
