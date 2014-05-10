@@ -6,6 +6,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.4.4:
                      .
                      - Printer now takes operator precedences into account while printing `Binop` and `Unop` expressions and prints parenthesis as necessary.
+                     .
                      - Printer now does not put line break in `Binop` expressions.
                      .
                      \0.4.3:
