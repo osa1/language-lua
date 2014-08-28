@@ -3,6 +3,12 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      .
                      Changelog:
                      .
+                     \0.4.5:
+                     .
+                     - Fixed a bug that made lexer accept invalid escape sequences in strings.
+                     .
+                     - Strings are now interpreted \-\- string "\\n" is now parsed to Haskell string "\\n", instead of "\\\\n".
+                     .
                      \0.4.4:
                      .
                      - Printer now takes operator precedences into account while printing `Binop` and `Unop` expressions and prints parenthesis as necessary.
@@ -46,7 +52,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.4.4
+Version:             0.4.5
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
