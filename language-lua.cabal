@@ -9,6 +9,8 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      .
                      - Strings are now interpreted \-\- string "\\n" is now parsed to Haskell string "\\n", instead of "\\\\n".
                      .
+                     - Fixed character code parsing.
+                     .
                      \0.4.4:
                      .
                      - Printer now takes operator precedences into account while printing `Binop` and `Unop` expressions and prints parenthesis as necessary.

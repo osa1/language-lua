@@ -12,6 +12,7 @@ import Language.Lua.Annotated.Syntax
 import Language.Lua.Token
 import Control.Applicative ((<$>))
 import Control.Monad (forM_, unless, when)
+import Data.Char (isNumber)
 import Safe (readMay)
 }
 
@@ -23,7 +24,6 @@ $letter      = [a-zA-Z_]                 -- first letter of variables
 $identletter = [a-zA-Z_0-9]              -- letters for rest of variables
 
 $digit    = 0-9                          -- decimal digits
-$octdigit = 0-7                          -- octal digits
 $hexdigit = [0-9a-fA-F]                  -- hexadecimal digits
 
 $dqstr    = \0-\255 # [ \" \n \\ ]       -- valid character in a string literal with dquotes
@@ -31,8 +31,8 @@ $sqstr    = \0-\255 # [ \' \n \\ ]       -- valid character in a string literal 
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfa\\\?\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+ | \n)
-@charescs  = \\ ([ntvbrfa\\\?\'] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+ | \n)
+@charescd  = \\ ([ntvbrfa\\\?\"] | $digit{1,3} | x$hexdigit{2} | \n)
+@charescs  = \\ ([ntvbrfa\\\?\'] | $digit{1,3} | x$hexdigit{2} | \n)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -196,7 +196,8 @@ mkString :: Bool -> String -> Int -> AlexPosn -> LTok
 mkString True s l posn =
     -- double quoted string, to make it Haskell readable:
     -- replace \\n with \n
-    (LTokSLit (readString posn $ r (take l s)), posn)
+    -- replace character codes with characters manually
+    (LTokSLit (readString posn $ r (replaceCharCodes (take l s))), posn)
   where
     r ('\\' : '\n' : rest) = '\n' : r rest
     r (c : rest) = c : r rest
@@ -207,13 +208,61 @@ mkString False s l posn =
     -- replace wrapping single quotes with double quotes
     -- replace escaped single quotes in the string with single quotes
     -- replace non-escaped double quotes in the string with escaped double quotes
-    (LTokSLit (readString posn $ '"' : r (take (l-2) $ drop 1 s) ++ "\""), posn)
+    -- replace character codes with characters manually
+    (LTokSLit (readString posn $ '"' : r (replaceCharCodes (take (l-2) $ drop 1 s)) ++ "\""), posn)
   where
     r ('\\' : '\n' : rest) = '\n' : r rest
     r ('\\' : '\'' : rest) = '\'' : r rest
     r ('"' : rest) = '\\' : '"' : r rest
     r (c : rest) = c : r rest
     r [] = []
+
+replaceCharCodes :: String -> String
+replaceCharCodes s =
+  case s of
+    ('\\' : 'x' : h1 : h2 : rest) -> toEnum (hexToInt h1 * 16 + hexToInt h2) : replaceCharCodes rest
+    ('\\' : c1 : c2 : c3 : rest)
+      | isNumber c1 && isNumber c2 && isNumber c3 ->
+          toEnum (decToNum c1 * 100 + decToNum c2 * 10 + decToNum c3) : replaceCharCodes rest
+      | isNumber c1 && isNumber c2 ->
+          toEnum (decToNum c1 * 10 + decToNum c2) : replaceCharCodes (c3 : rest)
+      | isNumber c1 ->
+          toEnum (decToNum c1) : replaceCharCodes (c2 : c3 : rest)
+      | otherwise ->
+          '\\' : c1 : replaceCharCodes (c2 : c3 : rest)
+    ['\\', c1, c2]
+      | isNumber c1 && isNumber c2 ->
+          [toEnum (decToNum c1 * 10 + decToNum c2)]
+      | isNumber c1 ->
+          toEnum (decToNum c1) : replaceCharCodes [c2]
+      | otherwise -> s
+    ['\\', c1]
+      | isNumber c1 -> [toEnum (decToNum c1)]
+      | otherwise -> s
+    (c : rest) -> c : replaceCharCodes rest
+    [] -> []
+
+hexToInt :: Char -> Int
+hexToInt c =
+  case c of
+    'A' -> 10
+    'a' -> 10
+    'B' -> 11
+    'b' -> 11
+    'C' -> 12
+    'c' -> 12
+    'D' -> 13
+    'd' -> 13
+    'E' -> 14
+    'e' -> 14
+    'F' -> 15
+    'f' -> 15
+    _   -> decToNum c
+
+{-# INLINE decToNum #-}
+decToNum :: Char -> Int
+decToNum c = fromEnum c - fromEnum '0'
+
 
 readString :: AlexPosn -> String -> String
 readString (AlexPn _ line col) s =
