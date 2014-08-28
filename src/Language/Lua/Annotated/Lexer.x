@@ -12,6 +12,7 @@ import Language.Lua.Annotated.Syntax
 import Language.Lua.Token
 import Control.Applicative ((<$>))
 import Control.Monad (forM_, unless, when)
+import Safe (readMay)
 }
 
 %wrapper "monadUserState"
@@ -25,13 +26,13 @@ $digit    = 0-9                          -- decimal digits
 $octdigit = 0-7                          -- octal digits
 $hexdigit = [0-9a-fA-F]                  -- hexadecimal digits
 
-$dqstr    = \0-\255 # [ \" \n ]          -- valid character in a string literal with dquotes
-$sqstr    = \0-\255 # [ \' \n ]          -- valid character in a string literal with quotes
+$dqstr    = \0-\255 # [ \" \n \\ ]       -- valid character in a string literal with dquotes
+$sqstr    = \0-\255 # [ \' \n \\ ]       -- valid character in a string literal with quotes
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfaeE\\\?\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
-@charescs  = \\ ([ntvbrfaeE\\\?\'] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+)
+@charescd  = \\ ([ntvbrfa\\\?\"] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+ | \n)
+@charescs  = \\ ([ntvbrfa\\\?\'] | $octdigit{1,3} | x$hexdigit+ | X$hexdigit+ | \n)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -39,7 +40,7 @@ $longstr  = \0-\255                      -- valid character in a long string
 @mantpart = (@digits \. @digits) | @digits \. | \. @digits
 @exppart  = [eE][\+\-]? @digits
 
-@hexprefix = 0x | 0X
+@hexprefix   = 0x | 0X
 @mantparthex = (@hexdigits \. @hexdigits) | @hexdigits \. | \. @hexdigits
 @expparthex  = [pP][\+\-]? @hexdigits
 
@@ -56,8 +57,8 @@ tokens :-
     <0> @hexprefix @hexdigits @expparthex    { tokWValue LTokNum }
     <0> @hexprefix @mantparthex @expparthex? { tokWValue LTokNum }
 
-    <0> \"($dqstr|@charescd)*\" { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), posn) }
-    <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) l -> return (LTokSLit (tail . init $ take l s), posn) }
+    <0> \"($dqstr|@charescd)*\" { \(posn,_,_,s) l -> return $ mkString True  s l posn }
+    <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) l -> return $ mkString False s l posn }
 
     -- long strings
     <0> \[ \=* \[ \n?        { enterString `andBegin` state_string }
@@ -189,6 +190,37 @@ testAndEndString (_,_,_,s) len = do
                 val  <- getStringValue
                 posn <- getStringPosn
                 return (LTokSLit (reverse val), posn)
+
+{-# INLINE mkString #-}
+mkString :: Bool -> String -> Int -> AlexPosn -> LTok
+mkString True s l posn =
+    -- double quoted string, to make it Haskell readable:
+    -- replace \\n with \n
+    (LTokSLit (readString posn $ r (take l s)), posn)
+  where
+    r ('\\' : '\n' : rest) = '\n' : r rest
+    r (c : rest) = c : r rest
+    r [] = []
+mkString False s l posn =
+    -- single quoted string, to make it Haskell readable:
+    -- replace \\n with \n
+    -- replace wrapping single quotes with double quotes
+    -- replace escaped single quotes in the string with single quotes
+    -- replace non-escaped double quotes in the string with escaped double quotes
+    (LTokSLit (readString posn $ '"' : r (take (l-2) $ drop 1 s) ++ "\""), posn)
+  where
+    r ('\\' : '\n' : rest) = '\n' : r rest
+    r ('\\' : '\'' : rest) = '\'' : r rest
+    r ('"' : rest) = '\\' : '"' : r rest
+    r (c : rest) = c : r rest
+    r [] = []
+
+readString :: AlexPosn -> String -> String
+readString (AlexPn _ line col) s =
+  case readMay s of
+    Nothing -> error $ concat
+      [ "lexical error near line: ", show line, " col: ", show col, ": Cannot read string " ++ show s ]
+    Just s' -> s'
 
 data EOF = EOF deriving Show
 
