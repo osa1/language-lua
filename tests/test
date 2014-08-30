@@ -1,1 +1,0 @@
-[(LTokNum "1",AlexPn 0 1 1),(LTokIdent "bir",AlexPn 2 2 1),(LTokMinus,AlexPn 5 2 4),(LTokIdent "token",AlexPn 6 2 5),(LTokSLit "\"bir string\"",AlexPn 12 3 1)]
