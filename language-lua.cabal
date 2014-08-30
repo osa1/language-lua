@@ -3,6 +3,10 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      .
                      Changelog:
                      .
+                     \0.4.6:
+                     .
+                     - Language.Lua.Annotated.Lexer module exposed.
+                     .
                      \0.4.5:
                      .
                      - Fixed a bug that made lexer accept invalid escape sequences in strings.
@@ -54,7 +58,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.4.5
+Version:             0.4.6
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
@@ -70,8 +74,8 @@ Cabal-version:       >= 1.9.2
 Extra-source-files:  src/Text/PrettyPrint/LICENSE
 
 Source-repository head
-  type:              git
-  location:          git://github.com/osa1/language-lua.git
+  Type:              git
+  Location:          git://github.com/osa1/language-lua.git
 
 Library
   Hs-source-dirs:    src
@@ -84,11 +88,11 @@ Library
                      Language.Lua.Annotated
                      Language.Lua.Annotated.Syntax
                      Language.Lua.Annotated.Parser
+                     Language.Lua.Annotated.Lexer
                      Language.Lua.Annotated.Simplify
                      Text.Parsec.LTok
 
-  Other-modules:     Language.Lua.Annotated.Lexer
-                     Text.PrettyPrint.Leijen
+  Other-modules:     Text.PrettyPrint.Leijen
 
   Build-depends:     base >= 4.5 && < 4.8,
                      mtl >= 2.0 && < 2.3,
