@@ -101,3 +101,13 @@ Library
                      safe >= 0.3 && < 0.4
 
   ghc-options:       -Wall
+
+Test-Suite tests
+  Type:              exitcode-stdio-1.0
+  Hs-source-dirs:    tests
+  Main-is:           Main.hs
+  Build-depends:     base >= 4.5 && < 4.8,
+                     tasty >= 0.8 && < 0.9,
+                     tasty-hunit,
+                     language-lua,
+                     parsec
