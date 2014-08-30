@@ -1,0 +1,15 @@
+language: "haskell"
+ghc: 7.8
+install:
+  - cabal install alex
+  - git clone https://github.com/osa1/language-lua
+  - cabal install --enable-tests
+
+script:
+  - ./dist/build/tests/tests
+
+notifications:
+  email:
+    recipients: omeragacan@gmail.com
+    on_success: change
+    on_failure: change
