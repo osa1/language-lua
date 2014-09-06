@@ -109,5 +109,7 @@ Test-Suite tests
   Build-depends:     base >= 4.5 && < 4.8,
                      tasty >= 0.8 && < 0.9,
                      tasty-hunit,
+                     tasty-quickcheck,
                      language-lua,
-                     parsec
+                     parsec,
+                     QuickCheck
