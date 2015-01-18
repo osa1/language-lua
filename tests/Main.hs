@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, StandaloneDeriving #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, ScopedTypeVariables,
+             StandaloneDeriving #-}
 
 module Main where
 
@@ -22,6 +23,9 @@ import           Control.Monad                   (forM_)
 import           GHC.Generics
 import           Prelude                         hiding (Ordering (..), exp)
 
+import           System.Directory                (getDirectoryContents)
+import           System.FilePath
+
 main :: IO ()
 main = defaultMain tests
 
@@ -29,7 +33,9 @@ tests :: TestTree
 tests = testGroup "Tests" [unitTests, propertyTests]
 
 unitTests :: TestTree
-unitTests = testGroup "Unit tests" [stringTests, numberTests]
+unitTests = testGroup "Unit tests" [stringTests, numberTests, lua522Tests]
+  where
+    lua522Tests = parseFilesTest "Parsing Lua files from Lua 5.2.2 test suite" "lua-5.2.2-tests"
 
 propertyTests :: TestTree
 propertyTests = testGroup "Property tests" [{-genPrintParse-}]
@@ -73,6 +79,17 @@ numberTests = testGroup "Number tests"
     assertNumber :: Exp -> Assertion
     assertNumber Number{} = return ()
     assertNumber nan      = assertFailure ("Not a number: " ++ show nan)
+
+parseFilesTest :: String -> FilePath -> TestTree
+parseFilesTest msg root = testCase msg $ do
+  luaFiles <- map (root </>) . filter ((==) ".lua" . takeExtension) <$> getDirectoryContents root
+  putStrLn $ "Trying to parse " ++ show (length luaFiles) ++ " Lua files."
+  forM_ luaFiles $ \luaFile -> do
+    putStrLn $ "Parsing file: " ++ luaFile
+    ret <- P.parseFile luaFile
+    case ret of
+      Left err -> assertFailure ("Parser error in " ++ luaFile ++ ": " ++ show err)
+      Right _  -> return ()
 
 genPrintParse :: TestTree
 genPrintParse =
