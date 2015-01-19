@@ -9,7 +9,7 @@ module Language.Lua.Annotated.Parser
   , chunk
   ) where
 
-import Prelude hiding (exp, LT, GT, EQ, repeat)
+import Prelude hiding (exp, LT, GT, EQ)
 
 import Language.Lua.Annotated.Lexer
 import Language.Lua.Annotated.Syntax
@@ -20,6 +20,7 @@ import Text.Parsec.LTok
 import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 import Control.Monad (liftM)
+import Data.List (foldl1')
 
 -- | Runs Lua lexer before parsing. Use @parseText stat@ to parse
 -- statements, and @parseText exp@ to parse expressions.
@@ -223,7 +224,9 @@ binary :: Monad m => LToken -> (SourcePos -> a -> a -> a) -> Assoc -> Operator [
 binary op fun = Infix (do pos <- getPosition; tok op; return $ fun pos)
 
 prefix :: Monad m => LToken -> (SourcePos -> a -> a) -> Operator [LTok] u m a
-prefix op fun = Prefix (do pos <- getPosition; tok op; return $ fun pos)
+prefix op fun = Prefix $ do
+  opPos <- many1 (getPosition <* tok op)
+  return $ foldl1' (.) $ map fun opPos
 
 opTable :: Monad m => SourcePos -> [[Operator [LTok] u m (Exp SourcePos)]]
 opTable pos = [ [ binary LTokExp       (Binop pos . Exp)    AssocRight ]
