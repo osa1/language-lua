@@ -1,4 +1,4 @@
-module Language.Lua.Token (LToken(..), tokenValue) where
+module Language.Lua.Token where
 
 -- | Lua tokens
 data LToken = LTokPlus               -- ^+
@@ -114,10 +114,3 @@ instance Show LToken where
     show (LTokSLit  s)     = "string: " ++ show s
     show (LTokIdent i)     = "identifier: " ++ show i
     show LTokEof           = "EOF"
-
--- | Partial function, returns value of `LTokNum`, `LTokSLit` and `LTokIdent`.
-tokenValue :: LToken -> String
-tokenValue (LTokNum n)   = n
-tokenValue (LTokSLit s)  = s
-tokenValue (LTokIdent i) = i
-tokenValue tok           = error ("trying to get value of " ++ show tok)

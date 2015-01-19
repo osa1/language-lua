@@ -39,11 +39,8 @@ brackets = between (tok LTokLBracket) (tok LTokRBracket)
 name :: Parser (Name SourcePos)
 name = do
     pos <- getPosition
-    str <- tokenValue <$> anyIdent
+    str <- anyIdent
     return $ Name pos str
-
-number :: Parser String
-number = tokenValue <$> anyNum
 
 
 data PrimaryExp a
@@ -119,9 +116,6 @@ var = suffixedExp >>= sexpToVar
 
 funCall :: Parser (FunCall SourcePos)
 funCall = suffixedExp >>= sexpToFunCall
-
-stringlit :: Parser String
-stringlit = tokenValue <$> string
 
 funArg :: Parser (FunArg SourcePos)
 funArg = tableArg <|> stringArg <|> arglist
