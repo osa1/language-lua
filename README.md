@@ -17,7 +17,7 @@ This module provides 3 parsers.
 
 Lexing is needed before running a parser. `parseText` function runs lexer before parsing. So if you want to parse a Lua expression, you can call `parseText exp string`, where string is the Lua expression to parse.
 
-`parseFile` is a helper to parse Lua files. Example: `parseFile "/path/to/lua/file"`. This is same as `readFile path >>= return . parseText chunk`.
+`parseFile` is a helper to parse Lua files. Example: `parseFile "/path/to/lua/file"`. This is same as ```parseText chunk `fmap` readFile path```.
 
 Note that `parseText` may result with failure, so it's return type is `Either ParserError a`.
 
