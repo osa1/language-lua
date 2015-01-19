@@ -5,11 +5,12 @@
 module Main where
 
 import qualified Language.Lua.Annotated          as A
-import           Language.Lua.Annotated.Lexer    (llex)
+import qualified Language.Lua.Annotated.Lexer    as L
 import qualified Language.Lua.Annotated.Simplify as S
 import qualified Language.Lua.Parser             as P
 import           Language.Lua.PrettyPrinter      (pprint)
 import           Language.Lua.Syntax
+import qualified Language.Lua.Token              as T
 
 import qualified Text.Parsec                     as P
 
@@ -33,7 +34,7 @@ tests :: TestTree
 tests = testGroup "Tests" [unitTests, propertyTests]
 
 unitTests :: TestTree
-unitTests = testGroup "Unit tests" [stringTests, numberTests, lua522Tests]
+unitTests = testGroup "Unit tests" [stringTests, numberTests, regressions, lua522Tests]
   where
     lua522Tests = parseFilesTest "Parsing Lua files from Lua 5.2.2 test suite" "lua-5.2.2-tests"
 
@@ -41,7 +42,7 @@ propertyTests :: TestTree
 propertyTests = testGroup "Property tests" [{-genPrintParse-}]
 
 parseExps :: String -> String -> Either P.ParseError [A.Exp P.SourcePos]
-parseExps file contents = P.runParser (many A.exp) () file (llex contents)
+parseExps file contents = P.runParser (many A.exp) () file (L.llex contents)
 
 stringTests :: TestTree
 stringTests = testGroup "String tests"
@@ -79,6 +80,12 @@ numberTests = testGroup "Number tests"
     assertNumber :: Exp -> Assertion
     assertNumber Number{} = return ()
     assertNumber nan      = assertFailure ("Not a number: " ++ show nan)
+
+regressions :: TestTree
+regressions = testGroup "Regression tests"
+    [ testCase "Lexing comment with text \"EOF\" in it" $ do
+        assertEqual "Lexing is wrong" [(T.LTokEof, L.AlexPn (-1) (-1) (-1))] (L.llex "--EOF")
+    ]
 
 parseFilesTest :: String -> FilePath -> TestTree
 parseFilesTest msg root = testCase msg $ do

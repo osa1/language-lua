@@ -98,8 +98,6 @@ tokens :-
     <0> ".."  { tok LTokDDot }
     <0> "..." { tok LTokEllipsis }
 
-    \EOF  { tok LTokEof }
-
 {
 
 data AlexUserState = AlexUserState { stringState     :: !Bool
