@@ -14,6 +14,7 @@ import Control.Applicative ((<$>))
 import Control.Monad (forM_, unless, when)
 import Data.Char (isNumber)
 import Safe (readMay)
+
 }
 
 %wrapper "monadUserState"
@@ -140,6 +141,9 @@ getCommentState = Alex $ \s@AlexState{alex_ust=ust} -> Right (s, commentState us
 addCharToStringValue :: Char -> Alex ()
 addCharToStringValue c = Alex $ \s -> Right (s{alex_ust=(alex_ust s){stringValue=c:stringValue (alex_ust s)}}, ())
 
+putInputBack :: String -> Alex ()
+putInputBack str = Alex $ \s -> Right (s{alex_inp=str ++ alex_inp s}, ())
+
 enterString :: AlexAction LTok
 enterString (posn,_,_,s) len = do
   initString (if (s !! (len-1) == '\n') then len-1 else len) posn
@@ -175,7 +179,8 @@ testAndEndString :: AlexAction LTok
 testAndEndString (_,_,_,s) len = do
   startlen <- getStringDelimLen
   if startlen /= len
-    then do forM_ (take len s) addCharToStringValue
+    then do addCharToStringValue (head s)
+            putInputBack (tail $ take len s)
             alexMonadScan'
     else do endString
             alexSetStartCode 0
