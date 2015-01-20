@@ -50,10 +50,13 @@ instance LPretty Exp where
     pprint' _ (EFunDef f)    = pprint f
     pprint' _ (PrefixExp pe) = pprint pe
     pprint' _ (TableConst t) = pprint t
-    pprint' p (Binop op e1 e2) = ps (pprint' opPrec e1 <+> pprint op <+> pprint' opPrec e2)
+    pprint' p (Binop op e1 e2) = ps (pprint' opPrecL e1 <+> pprint op
+                                                        <+> case e2 of
+                                                              Unop{} -> pprint e2
+                                                              _ -> pprint' opPrecR e2)
       where
-        opPrec = getBinopPrec op
-        ps = if opPrec < p then parens else id
+        (opPrecL, opPrecR) = getBinopPrec op
+        ps = if min opPrecL opPrecR < p then parens else id
     pprint' p (Unop op e)    = ps (pprint op <> pprint' opPrec e)
       where
         opPrec = getUnopPrec op
@@ -86,27 +89,27 @@ instance LPretty Unop where
     pprint Not = text "not "
     pprint Len = char '#'
 
-getBinopPrec :: Binop -> Precedence
+getBinopPrec :: Binop -> (Precedence, Precedence)
 getBinopPrec op =
     case op of
-      Add -> 5
-      Sub -> 5
-      Mul -> 6
-      Div -> 6
-      Exp -> 8
-      Mod -> 6
-      Concat -> 4
-      LT -> 3
-      LTE -> 3
-      GT -> 3
-      GTE -> 3
-      EQ -> 3
-      NEQ -> 3
-      And -> 2
-      Or -> 1
+      Add -> (10, 10)
+      Sub -> (10, 10)
+      Mul -> (11, 11)
+      Div -> (11, 11)
+      Exp -> (14, 13)
+      Mod -> (11, 11)
+      Concat -> (9, 8)
+      LT -> (3, 3)
+      LTE -> (3, 3)
+      GT -> (3, 3)
+      GTE -> (3, 3)
+      EQ -> (3, 3)
+      NEQ -> (3, 3)
+      And -> (2, 2)
+      Or -> (1, 1)
 
 getUnopPrec :: Unop -> Precedence
-getUnopPrec = const 7
+getUnopPrec = const 12
 
 instance LPretty PrefixExp where
     pprint (PEVar var)         = pprint var

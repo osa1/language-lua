@@ -21,6 +21,7 @@ import           Test.Tasty.QuickCheck
 
 import           Control.Applicative
 import           Control.Monad                   (forM_)
+import           Data.Char                       (isSpace)
 import           GHC.Generics
 import           Prelude                         hiding (Ordering (..), exp)
 
@@ -85,7 +86,29 @@ regressions :: TestTree
 regressions = testGroup "Regression tests"
     [ testCase "Lexing comment with text \"EOF\" in it" $ do
         assertEqual "Lexing is wrong" [(T.LTokEof, L.AlexPn (-1) (-1) (-1))] (L.llex "--EOF")
+    , testCase "Binary/unary operator parsing/printing" $ do
+        pp "2^3^2 == 2^(3^2)"
+        pp "2^3*4 == (2^3)*4"
+        pp "2^-2 == 1/4 and -2^- -2 == - - -4"
+        pp "not nil and 2 and not(2>3 or 3<2)"
+        pp "-3-1-5 == 0+0-9"
+        pp "-2^2 == -4 and (-2)^2 == 4 and 2*2-3-1 == 0"
+        pp "2*1+3/3 == 3 and 1+2 .. 3*1 == \"33\""
+        pp "not(2+1 > 3*1) and \"a\"..\"b\" > \"a\""
+        pp "not ((true or false) and nil)"
+        pp "true or false  and nil"
+        pp "(((1 or false) and true) or false) == true"
+        pp "(((nil and true) or false) and true) == false"
     ]
+  where
+    pp :: String -> Assertion
+    pp expr =
+      case P.parseText P.exp expr of
+        Left err -> assertFailure $ "Parsing failed: " ++ show err
+        Right expr' ->
+          assertEqual "Printed string is not equal to original one modulo whitespace"
+            (filter (not . isSpace) expr) (filter (not . isSpace) (show $ pprint expr'))
+
 
 parseFilesTest :: String -> FilePath -> TestTree
 parseFilesTest msg root = testCase msg $ do

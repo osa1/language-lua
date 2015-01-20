@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-hi-shadowing
                 -fno-warn-name-shadowing
                 -fno-warn-unused-do-bind #-}
+{-# LANGUAGE LambdaCase, TupleSections #-}
+
 module Language.Lua.Annotated.Parser
   ( parseText
   , parseFile
@@ -17,10 +19,8 @@ import Language.Lua.Token
 
 import Text.Parsec hiding (string)
 import Text.Parsec.LTok
-import Text.Parsec.Expr
 import Control.Applicative ((<*), (<$>), (<*>))
 import Control.Monad (liftM)
-import Data.List (foldl1')
 
 -- | Runs Lua lexer before parsing. Use @parseText stat@ to parse
 -- statements, and @parseText exp@ to parse expressions.
@@ -195,7 +195,7 @@ table = do
 ---- Expressions
 
 nilExp, boolExp, numberExp, stringExp, varargExp, fundefExp,
-  prefixexpExp, tableconstExp, exp, exp' :: Parser (Exp SourcePos)
+  prefixexpExp, tableconstExp, exp :: Parser (Exp SourcePos)
 
 nilExp = (Nil <$> getPosition) <* tok LTokNil
 
@@ -220,47 +220,62 @@ prefixexpExp = PrefixExp <$> getPosition <*> liftM sexpToPexp suffixedExp
 
 tableconstExp = TableConst <$> getPosition <*> table
 
-binary :: Monad m => LToken -> (SourcePos -> a -> a -> a) -> Assoc -> Operator [LTok] u m a
-binary op fun = Infix (do pos <- getPosition; tok op; return $ fun pos)
+type Binop' = Exp SourcePos -> Exp SourcePos -> Exp SourcePos
+type Unop'  = Exp SourcePos -> Exp SourcePos
 
-prefix :: Monad m => LToken -> (SourcePos -> a -> a) -> Operator [LTok] u m a
-prefix op fun = Prefix $ do
-  opPos <- many1 (getPosition <* tok op)
-  return $ foldl1' (.) $ map fun opPos
+binop :: Parser (Binop', Int, Int)
+binop = do
+  pos <- getPosition
+  choice
+    [ tok LTokPlus >> return (Binop pos (Add pos), 10, 10)
+    , tok LTokMinus >> return (Binop pos (Sub pos), 10, 10)
+    , tok LTokStar >> return (Binop pos (Mul pos), 11, 11)
+    , tok LTokSlash >> return (Binop pos (Div pos), 11, 11)
+    , tok LTokExp >> return (Binop pos (Exp pos), 14, 13)
+    , tok LTokPercent >> return (Binop pos (Mod pos), 11, 11)
+    , tok LTokDDot >> return (Binop pos (Concat pos), 9, 8)
+    , tok LTokLT >> return (Binop pos (LT pos), 3, 3)
+    , tok LTokLEq >> return (Binop pos (LTE pos), 3, 3)
+    , tok LTokGT >> return (Binop pos (GT pos), 3, 3)
+    , tok LTokGEq >> return (Binop pos (GTE pos), 3, 3)
+    , tok LTokEqual >> return (Binop pos (EQ pos), 3, 3)
+    , tok LTokNotequal >> return (Binop pos (NEQ pos), 3, 3)
+    , tok LTokAnd >> return (Binop pos (And pos), 2, 2)
+    , tok LTokOr >> return (Binop pos (Or pos), 1, 1)
+    ]
 
-opTable :: Monad m => SourcePos -> [[Operator [LTok] u m (Exp SourcePos)]]
-opTable pos = [ [ binary LTokExp       (Binop pos . Exp)    AssocRight ]
-              , [ prefix LTokNot       (Unop pos . Not)
-                , prefix LTokSh        (Unop pos . Len)
-                , prefix LTokMinus     (Unop pos . Neg)
-                ]
-              , [ binary LTokStar      (Binop pos . Mul)    AssocLeft
-                , binary LTokSlash     (Binop pos . Div)    AssocLeft
-                , binary LTokPercent   (Binop pos . Mod)    AssocLeft
-                ]
-              , [ binary LTokPlus      (Binop pos . Add)    AssocLeft
-                , binary LTokMinus     (Binop pos . Sub)    AssocLeft
-                ]
-              , [ binary LTokDDot      (Binop pos . Concat) AssocRight ]
-              , [ binary LTokGT        (Binop pos . GT)     AssocLeft
-                , binary LTokLT        (Binop pos . LT)     AssocLeft
-                , binary LTokGEq       (Binop pos . GTE)    AssocLeft
-                , binary LTokLEq       (Binop pos . LTE)    AssocLeft
-                , binary LTokNotequal  (Binop pos . NEQ)    AssocLeft
-                , binary LTokEqual     (Binop pos . EQ)     AssocLeft
-                ]
-              , [ binary LTokAnd       (Binop pos . And)    AssocLeft ]
-              , [ binary LTokOr        (Binop pos . Or)     AssocLeft ]
-              ]
-opExp :: SourcePos -> Parser (Exp SourcePos)
-opExp pos = buildExpressionParser (opTable pos) exp' <?> "opExp"
+unop :: Parser (Unop', Int)
+unop = do
+    pos <- getPosition
+    unopTok <- choice
+      [ tok LTokMinus >> return Neg
+      , tok LTokNot >> return Not
+      , tok LTokSh >> return Len
+      ]
+    return (Unop pos (unopTok pos), 12)
 
-exp' = choice [ nilExp, boolExp, numberExp, stringExp, varargExp,
-                fundefExp, prefixexpExp, tableconstExp ]
+subexp :: Int -> Parser (Exp SourcePos, Maybe (Binop', Int, Int))
+subexp limit = do
+    (e1, bop) <- optionMaybe unop >>=
+                   \case Nothing -> (, Nothing) <$> simpleExp
+                         Just (uop, uopPri) -> do
+                           (e1, bop) <- subexp uopPri
+                           return (uop e1, bop)
+    maybe (optionMaybe binop) (return . Just) bop >>= loop limit e1
+  where
+    loop _ e1 Nothing = return (e1, Nothing)
+    loop limit e1 (Just b@(bop, bopPriL, bopPriR))
+      | bopPriL > limit = do
+          (e2, nextOp) <- subexp bopPriR
+          loop limit (bop e1 e2) nextOp
+      | otherwise = return (e1, Just b)
+
+simpleExp :: Parser (Exp SourcePos)
+simpleExp = choice [ nilExp, boolExp, numberExp, stringExp, varargExp,
+                     fundefExp, prefixexpExp, tableconstExp ]
 
 -- | Expression parser.
-exp = choice [ opExp =<< getPosition, nilExp, boolExp, numberExp, stringExp, varargExp,
-               fundefExp, prefixexpExp, tableconstExp ]
+exp = fst <$> subexp 0
 
 -----------------------------------------------------------------------
 ---- Statements
