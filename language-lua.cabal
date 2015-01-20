@@ -1,68 +1,74 @@
 Name:                language-lua
-Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<https://osa1.github.com/language-lua>)
-                     .
-                     Changelog:
-                     .
-                     \0.5.0:
-                     .
-                     - 2-years-old operator parsing bug fixed. Chained/nested
-                       operator expressions are now properly parsed.
-                     .
-                     \0.4.6:
-                     .
-                     - Language.Lua.Annotated.Lexer module exposed.
-                     .
-                     \0.4.5:
-                     .
-                     - Fixed a bug that made lexer accept invalid escape sequences in strings.
-                     .
-                     - Strings are now interpreted \-\- string "\\n" is now parsed to Haskell string "\\n", instead of "\\\\n".
-                     .
-                     - Fixed character code parsing.
-                     .
-                     \0.4.4:
-                     .
-                     - Printer now takes operator precedences into account while printing `Binop` and `Unop` expressions and prints parenthesis as necessary.
-                     .
-                     - Printer now does not put line break in `Binop` expressions.
-                     .
-                     \0.4.3:
-                     .
-                     - `Data` and `Typeable` instances are implemented for syntax tree.
-                     .
-                     \0.4.2:
-                     .
-                     - More tweaks in pretty printer.
-                     .
-                     - Started using 2 spaces for indentation(instead of 4 as before).
-                     .
-                     \0.4.1:
-                     .
-                     - Some tweaks in pretty-printer.
-                     .
-                     \0.4.0:
-                     .
-                     - `Table` and `FunDef` nodes are removed from simplified syntax.
-                     .
-                     \0.3.1:
-                     .
-                     - Fixed incorrectly exported name `exp` in `Language.Lua.Parser` module.
-                     .
-                     \0.3.0:
-                     .
-                     - Added non-annotated syntax to make code-generation easier.
-                     .
-                     \0.2.3:
-                     .
-                     - Minor internal changes.
-                     .
-                     \0.2.2:
-                     .
-                     - Some tweaks in pretty-printer.
-                     .
-                     \0.2.0:
-                     .
-                     - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
+
+Description:
+    Lua 5.2 lexer, parser and pretty-printer.
+    .
+    Changelog:
+    .
+    \0.5.0:
+    .
+    - 2-years-old operator parsing bug fixed. Chained/nested operator
+      expressions are now properly parsed.
+    .
+    \0.4.6:
+    .
+    - Language.Lua.Annotated.Lexer module exposed.
+    .
+    \0.4.5:
+    .
+    - Fixed a bug that made lexer accept invalid escape sequences in strings.
+    .
+    - Strings are now interpreted \-\- string "\\n" is now parsed to Haskell
+      string "\\n", instead of "\\\\n".
+    .
+    - Fixed character code parsing.
+    .
+    \0.4.4:
+    .
+    - Printer now takes operator precedences into account while printing
+      `Binop` and `Unop` expressions and prints parenthesis as necessary.
+    .
+    - Printer now does not put line break in `Binop` expressions.
+    .
+    \0.4.3:
+    .
+    - `Data` and `Typeable` instances are implemented for syntax tree.
+    .
+    \0.4.2:
+    .
+    - More tweaks in pretty printer.
+    .
+    - Started using 2 spaces for indentation(instead of 4 as before).
+    .
+    \0.4.1:
+    .
+    - Some tweaks in pretty-printer.
+    .
+    \0.4.0:
+    .
+    - `Table` and `FunDef` nodes are removed from simplified syntax.
+    .
+    \0.3.1:
+    .
+    - Fixed incorrectly exported name `exp` in `Language.Lua.Parser` module.
+    .
+    \0.3.0:
+    .
+    - Added non-annotated syntax to make code-generation easier.
+    .
+    \0.2.3:
+    .
+    - Minor internal changes.
+    .
+    \0.2.2:
+    .
+    - Some tweaks in pretty-printer.
+    .
+    \0.2.0:
+    .
+    - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate
+      resulting tree with source positions.
+
 Version:             0.5.0
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
