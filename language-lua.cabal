@@ -3,6 +3,11 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      .
                      Changelog:
                      .
+                     \0.5.0:
+                     .
+                     - 2-years-old operator parsing bug fixed. Chained/nested
+                       operator expressions are now properly parsed.
+                     .
                      \0.4.6:
                      .
                      - Language.Lua.Annotated.Lexer module exposed.
@@ -58,7 +63,7 @@ Description:         Lua 5.2 lexer, parser and pretty-printer. Documentation: (<
                      \0.2.0:
                      .
                      - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate resulting tree with source positions.
-Version:             0.4.6
+Version:             0.5.0
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
