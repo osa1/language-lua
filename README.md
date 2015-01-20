@@ -2,10 +2,11 @@ language-lua - Lua 5.2 lexer, parser and pretty-printer
 -------------------------------------------------------
 
 [![Build Status](https://travis-ci.org/osa1/language-lua.svg?branch=master)](https://travis-ci.org/osa1/language-lua)
+[![Hackage](https://budueba.com/hackage/language-lua)](https://hackage.haskell.org/package/language-lua)
 
 This package is just like any other *language x* packages. It provides lexer, parser and pretty-printer for [Lua](http://www.lua.org/) programming language.
 
-[Haddock documentation](https://osa1.github.io/language-lua)
+[Haddock documentation](https://hackage.haskell.org/package/language-lua)
 
 ### Usage
 
