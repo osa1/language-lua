@@ -103,6 +103,8 @@ regressions = testGroup "Regression tests"
     , testCase "Lexing unnecessarily escaped quotes" $ do
         show (L.llex "'\\\"'") `deepseq` return ()
         show (L.llex "\"\\\'\"") `deepseq` return ()
+    , testCase "Lexing long literal `[====[ ... ]====]`" $ do
+        show (L.llex "[=[]]=]") `deepseq` return ()
     ]
   where
     pp :: String -> Assertion
