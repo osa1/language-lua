@@ -261,13 +261,13 @@ subexp limit = do
                          Just (uop, uopPri) -> do
                            (e1, bop) <- subexp uopPri
                            return (uop e1, bop)
-    maybe (optionMaybe binop) (return . Just) bop >>= loop limit e1
+    maybe (optionMaybe binop) (return . Just) bop >>= loop e1
   where
-    loop _ e1 Nothing = return (e1, Nothing)
-    loop limit e1 (Just b@(bop, bopPriL, bopPriR))
+    loop e1 Nothing = return (e1, Nothing)
+    loop e1 (Just b@(bop, bopPriL, bopPriR))
       | bopPriL > limit = do
           (e2, nextOp) <- subexp bopPriR
-          loop limit (bop e1 e2) nextOp
+          loop (bop e1 e2) nextOp
       | otherwise = return (e1, Just b)
 
 simpleExp :: Parser (Exp SourcePos)
