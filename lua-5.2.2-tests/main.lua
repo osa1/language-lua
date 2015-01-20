@@ -1,5 +1,3 @@
-# testing special comment on first line
-
 -- most (all?) tests here assume a reasonable "Unix-like" shell
 if _port then return end
 
