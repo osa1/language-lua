@@ -5,6 +5,16 @@ Description:
     .
     Changelog:
     .
+
+    \0.6.0:
+    .
+    - Fixed a long string literal parsing bug which was causing long strings to
+      terminate at wrong points.
+    .
+    - \\z escape characters in strings are now scanned and interpreted correctly.
+    .
+    - This is first version that parses all of Lua 5.2.2 test suite.
+    .
     \0.5.0:
     .
     - 2-years-old operator parsing bug fixed. Chained/nested operator
@@ -69,7 +79,7 @@ Description:
     - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate
       resulting tree with source positions.
 
-Version:             0.5.0
+Version:             0.6.0
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
