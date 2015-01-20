@@ -1,16 +1,23 @@
 language: "haskell"
 ghc: 7.8
-install:
+
+before_install:
   - cabal install alex
-  - git clone https://github.com/osa1/language-lua
-  - cabal install --enable-tests
+  - cabal install --only-dependencies --enable-tests
+
+install:
+  - cabal configure --enable-tests --enable-library-coverage
+  - cabal build
 
 script:
-  - ./dist/build/tests/tests
+  - cabal test
+
+after_script:
+ - cabal install hpc-coveralls
+ - hpc-coveralls test doctests
 
 notifications:
   email:
     recipients: omeragacan@gmail.com
     on_success: change
     on_failure: change
-
