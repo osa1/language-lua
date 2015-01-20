@@ -31,8 +31,8 @@ $sqstr    = \0-\255 # [ \' \n \\ ]       -- valid character in a string literal 
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfa\\\?\"] | $digit{1,3} | x$hexdigit{2} | \n)
-@charescs  = \\ ([ntvbrfa\\\?\'] | $digit{1,3} | x$hexdigit{2} | \n)
+@charescd  = \\ ([ntvbrfa\\\?'"] | $digit{1,3} | x$hexdigit{2} | \n)
+@charescs  = \\ ([ntvbrfa\\\?"'] | $digit{1,3} | x$hexdigit{2} | \n)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -198,6 +198,7 @@ mkString True s l posn =
     (LTokSLit (readString posn $ r (replaceCharCodes (take l s))), posn)
   where
     r ('\\' : '\n' : rest) = '\n' : r rest
+    r ('\\' : '\'' : rest) = '\'' : r rest -- handle redundant escaping
     r (c : rest) = c : r rest
     r [] = []
 mkString False s l posn =
@@ -211,6 +212,7 @@ mkString False s l posn =
   where
     r ('\\' : '\n' : rest) = '\n' : r rest
     r ('\\' : '\'' : rest) = '\'' : r rest
+    r ('\\' : '\"' : rest) = '\\' : '"' : r rest -- handle redundant escaping
     r ('"' : rest) = '\\' : '"' : r rest
     r (c : rest) = c : r rest
     r [] = []

@@ -20,6 +20,7 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 import           Control.Applicative
+import           Control.DeepSeq                 (deepseq)
 import           Control.Monad                   (forM_)
 import           Data.Char                       (isSpace)
 import           GHC.Generics
@@ -100,8 +101,8 @@ regressions = testGroup "Regression tests"
         pp "(((1 or false) and true) or false) == true"
         pp "(((nil and true) or false) and true) == false"
     , testCase "Lexing unnecessarily escaped quotes" $ do
-        L.llex "'\\\"'" `seq` return ()
-        L.llex "\"\\\'\"" `seq` return ()
+        show (L.llex "'\\\"'") `deepseq` return ()
+        show (L.llex "\"\\\'\"") `deepseq` return ()
     ]
   where
     pp :: String -> Assertion

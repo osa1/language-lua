@@ -118,6 +118,7 @@ Test-Suite tests
   Hs-source-dirs:    tests
   Main-is:           Main.hs
   Build-depends:     base >= 4.5 && < 4.8,
+                     deepseq,
                      directory,
                      filepath,
                      language-lua,
