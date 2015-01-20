@@ -105,6 +105,8 @@ regressions = testGroup "Regression tests"
         show (L.llex "\"\\\'\"") `deepseq` return ()
     , testCase "Lexing long literal `[====[ ... ]====]`" $ do
         show (L.llex "[=[]]=]") `deepseq` return ()
+    , testCase "Handling \\z" $ do
+        show (L.llex "\"\\z\n  \"") `deepseq` return ()
     ]
   where
     pp :: String -> Assertion

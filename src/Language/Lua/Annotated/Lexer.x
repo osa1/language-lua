@@ -32,8 +32,8 @@ $sqstr    = \0-\255 # [ \' \n \\ ]       -- valid character in a string literal 
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfa\\\?'"] | $digit{1,3} | x$hexdigit{2} | \n)
-@charescs  = \\ ([ntvbrfa\\\?"'] | $digit{1,3} | x$hexdigit{2} | \n)
+@charescd  = \\ ([ntvbrfa\\\?'"] | $digit{1,3} | x$hexdigit{2} | \n | z [$space \n]*)
+@charescs  = \\ ([ntvbrfa\\\?"'] | $digit{1,3} | x$hexdigit{2} | \n | z [$space \n]*)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -202,6 +202,10 @@ mkString True s l posn =
     -- replace character codes with characters manually
     (LTokSLit (readString posn $ r (replaceCharCodes (take l s))), posn)
   where
+    -- we could handle \z while reading characters, at the cost of adding
+    -- more state to the lexer. I wanted to go with simplest
+    -- implementation.
+    r ('\\' : 'z' : rest) = r (skipWS rest)
     r ('\\' : '\n' : rest) = '\n' : r rest
     r ('\\' : '\'' : rest) = '\'' : r rest -- handle redundant escaping
     r (c : rest) = c : r rest
@@ -215,6 +219,7 @@ mkString False s l posn =
     -- replace character codes with characters manually
     (LTokSLit (readString posn $ '"' : r (replaceCharCodes (take (l-2) $ drop 1 s)) ++ "\""), posn)
   where
+    r ('\\' : 'z' : rest) = r (skipWS rest)
     r ('\\' : '\n' : rest) = '\n' : r rest
     r ('\\' : '\'' : rest) = '\'' : r rest
     r ('\\' : '\"' : rest) = '\\' : '"' : r rest -- handle redundant escaping
@@ -246,6 +251,12 @@ replaceCharCodes s =
       | otherwise -> s
     (c : rest) -> c : replaceCharCodes rest
     [] -> []
+
+skipWS :: String -> String
+skipWS (' '  : rest) = skipWS rest
+skipWS ('\n' : rest) = skipWS rest
+skipWS ('\t' : rest) = skipWS rest
+skipWS str           = str
 
 hexToInt :: Char -> Int
 hexToInt c =
