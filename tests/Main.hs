@@ -99,6 +99,9 @@ regressions = testGroup "Regression tests"
         pp "true or false  and nil"
         pp "(((1 or false) and true) or false) == true"
         pp "(((nil and true) or false) and true) == false"
+    , testCase "Lexing unnecessarily escaped quotes" $ do
+        L.llex "'\\\"'" `seq` return ()
+        L.llex "\"\\\'\"" `seq` return ()
     ]
   where
     pp :: String -> Assertion
