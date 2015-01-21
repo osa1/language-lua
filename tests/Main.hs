@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveGeneric, FlexibleInstances, ScopedTypeVariables,
              StandaloneDeriving #-}
 
@@ -147,7 +146,7 @@ instance Eq P.ParseError where
 
 -- * Arbitrary instances
 
-newtype LuaString = LuaString { unwrapLuaString :: String } -- deriving (Generic)
+newtype LuaString = LuaString { unwrapLuaString :: String } deriving (Generic)
 
 -- FIXME: either fix this or implement separate lexer tests
 instance Arbitrary LuaString where
@@ -268,19 +267,3 @@ instance Arbitrary FunArg where
     , StringArg <$> arbitrary
     ]
   shrink = recursivelyShrink
-
--- * Generic instances
-
-deriving instance Generic LuaString
-deriving instance Generic Stat
-deriving instance Generic Exp
-deriving instance Generic Var
-deriving instance Generic Binop
-deriving instance Generic Unop
-deriving instance Generic PrefixExp
-deriving instance Generic TableField
-deriving instance Generic Block
-deriving instance Generic FunName
-deriving instance Generic FunBody
-deriving instance Generic FunCall
-deriving instance Generic FunArg

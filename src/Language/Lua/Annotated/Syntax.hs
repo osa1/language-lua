@@ -1,12 +1,13 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveFunctor, DeriveGeneric #-}
 
 -- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
 -- Annotation implementation is inspired by haskell-src-exts.
 module Language.Lua.Annotated.Syntax where
 
-import Prelude hiding (LT, EQ, GT)
+import Prelude hiding (EQ, GT, LT)
 import Data.Data
+import GHC.Generics (Generic)
+import Control.DeepSeq (NFData)
 
 data Name a = Name a String deriving (Show, Eq, Functor, Data, Typeable)
 
@@ -26,7 +27,7 @@ data Stat a
     | LocalFunAssign a (Name a) (FunBody a) -- ^local function \<var\> (..) .. end
     | LocalAssign a [Name a] (Maybe [Exp a]) -- ^local var1, var2 .. = exp1, exp2 ..
     | EmptyStat a -- ^/;/
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data Exp a
     = Nil a
@@ -39,59 +40,59 @@ data Exp a
     | TableConst a (Table a) -- ^table constructor
     | Binop a (Binop a) (Exp a) (Exp a) -- ^binary operators, /+ - * ^ % .. < <= > >= == ~= and or/
     | Unop a (Unop a) (Exp a) -- ^unary operators, /- not #/
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data Var a
     = VarName a (Name a) -- ^variable
     | Select a (PrefixExp a) (Exp a) -- ^/table[exp]/
     | SelectName a (PrefixExp a) (Name a) -- ^/table.variable/
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data Binop a = Add a | Sub a | Mul a | Div a | Exp a | Mod a | Concat a
     | LT a | LTE a | GT a | GTE a | EQ a | NEQ a | And a | Or a
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data Unop a = Neg a | Not a | Len a
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data PrefixExp a
     = PEVar a (Var a)
     | PEFunCall a (FunCall a)
     | Paren a (Exp a)
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data Table a = Table a [TableField a] -- ^list of table fields
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data TableField a
     = ExpField a (Exp a) (Exp a) -- ^/[exp] = exp/
     | NamedField a (Name a) (Exp a) -- ^/name = exp/
     | Field a (Exp a)
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 -- | A block is list of statements with optional return statement.
 data Block a = Block a [Stat a] (Maybe [Exp a])
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data FunName a = FunName a (Name a) [Name a] (Maybe (Name a))
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data FunDef a = FunDef a (FunBody a)
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data FunBody a = FunBody a [Name a] (Maybe a) (Block a) -- ^(args, vararg, block)
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data FunCall a
     = NormalFunCall a (PrefixExp a) (FunArg a) -- ^/prefixexp ( funarg )/
     | MethodCall a (PrefixExp a) (Name a) (FunArg a) -- ^/prefixexp : name ( funarg )/
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data FunArg a
     = Args a [Exp a] -- ^list of args
     | TableArg a (Table a) -- ^table constructor
     | StringArg a String -- ^string
-    deriving (Show, Eq, Functor, Data, Typeable)
+    deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 
 class Functor ast => Annotated ast where
@@ -262,3 +263,18 @@ instance Annotated FunArg where
     amap f (Args a x1) = Args (f a) x1
     amap f (TableArg a x1) = TableArg (f a) x1
     amap f (StringArg a x1) = StringArg (f a) x1
+
+instance NFData a => NFData (Stat a)
+instance NFData a => NFData (Exp a)
+instance NFData a => NFData (Var a)
+instance NFData a => NFData (Binop a)
+instance NFData a => NFData (Unop a)
+instance NFData a => NFData (PrefixExp a)
+instance NFData a => NFData (Table a)
+instance NFData a => NFData (TableField a)
+instance NFData a => NFData (Block a)
+instance NFData a => NFData (FunName a)
+instance NFData a => NFData (FunDef a)
+instance NFData a => NFData (FunBody a)
+instance NFData a => NFData (FunCall a)
+instance NFData a => NFData (FunArg a)
