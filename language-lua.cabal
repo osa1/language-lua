@@ -143,3 +143,16 @@ Test-Suite tests
                      tasty-quickcheck
 
   ghc-options:       -Wall
+
+Benchmark bench
+  type:              exitcode-stdio-1.0
+  default-language:  Haskell2010
+  main-is:           Main.hs
+  hs-source-dirs:    bench
+  ghc-options:       -Wall
+
+  build-depends:     base,
+                     criterion,
+                     directory,
+                     filepath,
+                     language-lua
