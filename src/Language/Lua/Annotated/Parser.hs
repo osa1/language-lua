@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-hi-shadowing
-                -fno-warn-name-shadowing
-                -fno-warn-unused-do-bind #-}
 {-# LANGUAGE LambdaCase, TupleSections #-}
 
 module Language.Lua.Annotated.Parser
@@ -11,16 +8,15 @@ module Language.Lua.Annotated.Parser
   , chunk
   ) where
 
-import Prelude hiding (exp, LT, GT, EQ)
+import           Control.Applicative           ((<$>), (<*), (<*>))
+import           Control.Monad                 (liftM)
+import           Prelude                       hiding (EQ, GT, LT, exp)
+import           Text.Parsec                   hiding (string)
+import           Text.Parsec.LTok
 
-import Language.Lua.Annotated.Lexer
-import Language.Lua.Annotated.Syntax
-import Language.Lua.Token
-
-import Text.Parsec hiding (string)
-import Text.Parsec.LTok
-import Control.Applicative ((<*), (<$>), (<*>))
-import Control.Monad (liftM)
+import           Language.Lua.Annotated.Lexer
+import           Language.Lua.Annotated.Syntax
+import           Language.Lua.Token
 
 -- | Runs Lua lexer before parsing. Use @parseText stat@ to parse
 -- statements, and @parseText exp@ to parse expressions.

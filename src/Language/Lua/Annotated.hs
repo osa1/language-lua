@@ -7,6 +7,7 @@ module Language.Lua.Annotated
   , chunk
   ) where
 
-import Prelude hiding (exp)
-import Language.Lua.Annotated.Syntax
-import Language.Lua.Annotated.Parser
+import           Prelude                       hiding (exp)
+
+import           Language.Lua.Annotated.Parser
+import           Language.Lua.Annotated.Syntax

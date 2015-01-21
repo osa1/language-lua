@@ -1,13 +1,12 @@
-{-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, StandaloneDeriving #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
 -- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
 module Language.Lua.Syntax where
 
-import Prelude hiding (LT, EQ, GT)
-import Data.Data
-import GHC.Generics (Generic)
-import Control.DeepSeq (NFData)
+import           Control.DeepSeq (NFData)
+import           Data.Data       (Data, Typeable)
+import           GHC.Generics    (Generic)
+import           Prelude         hiding (EQ, GT, LT)
 
 type Name = String
 

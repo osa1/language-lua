@@ -1,10 +1,11 @@
 -- | Remove annotations.
 module Language.Lua.Annotated.Simplify where
 
-import qualified Language.Lua.Annotated.Syntax as A
-import Language.Lua.Syntax
+import           Data.Maybe                    (isJust)
+import           Prelude                       hiding (EQ, GT, LT)
 
-import Prelude hiding (LT, EQ, GT)
+import qualified Language.Lua.Annotated.Syntax as A
+import           Language.Lua.Syntax
 
 sName :: A.Name a -> Name
 sName (A.Name _ s) = s
@@ -57,7 +58,7 @@ sFunName (A.FunName _ n ns on) = FunName (sName n) (map sName ns) (fmap sName on
 
 sFunBody :: A.FunBody a -> FunBody
 sFunBody (A.FunBody _ ns vararg b) =
-    FunBody (map sName ns) (maybe False (const True) vararg) (sBlock b)
+    FunBody (map sName ns) (isJust vararg) (sBlock b)
 
 sFunDef :: A.FunDef a -> FunBody
 sFunDef (A.FunDef _ fb) = sFunBody fb

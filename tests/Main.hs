@@ -1,5 +1,4 @@
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, ScopedTypeVariables,
-             StandaloneDeriving #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, ScopedTypeVariables #-}
 
 module Main where
 
@@ -84,7 +83,7 @@ numberTests = testGroup "Number tests"
 
 regressions :: TestTree
 regressions = testGroup "Regression tests"
-    [ testCase "Lexing comment with text \"EOF\" in it" $ do
+    [ testCase "Lexing comment with text \"EOF\" in it" $
         assertEqual "Lexing is wrong" [(T.LTokEof, L.AlexPn (-1) (-1) (-1))] (L.llex "--EOF")
     , testCase "Binary/unary operator parsing/printing" $ do
         pp "2^3^2 == 2^(3^2)"
@@ -102,9 +101,9 @@ regressions = testGroup "Regression tests"
     , testCase "Lexing unnecessarily escaped quotes" $ do
         show (L.llex "'\\\"'") `deepseq` return ()
         show (L.llex "\"\\\'\"") `deepseq` return ()
-    , testCase "Lexing long literal `[====[ ... ]====]`" $ do
+    , testCase "Lexing long literal `[====[ ... ]====]`" $
         show (L.llex "[=[]]=]") `deepseq` return ()
-    , testCase "Handling \\z" $ do
+    , testCase "Handling \\z" $
         show (L.llex "\"\\z\n  \"") `deepseq` return ()
     ]
   where
@@ -116,7 +115,6 @@ regressions = testGroup "Regression tests"
           assertEqual "Printed string is not equal to original one modulo whitespace"
             (filter (not . isSpace) expr) (filter (not . isSpace) (show $ pprint expr'))
 
-
 parseFilesTest :: String -> FilePath -> TestTree
 parseFilesTest msg root = testCase msg $ do
   luaFiles <- map (root </>) . filter ((==) ".lua" . takeExtension) <$> getDirectoryContents root
@@ -127,6 +125,10 @@ parseFilesTest msg root = testCase msg $ do
     case ret of
       Left err -> assertFailure ("Parser error in " ++ luaFile ++ ": " ++ show err)
       Right st -> force st `seq` return ()
+        -- case P.parseText P.chunk (show (pprint st)) of
+        --   Left err -> assertFailure ("Parser error while parsing printed version of "
+        --                               ++ luaFile ++ ": " ++ show err)
+        --   Right _  -> return ()
 
 genPrintParse :: TestTree
 genPrintParse =

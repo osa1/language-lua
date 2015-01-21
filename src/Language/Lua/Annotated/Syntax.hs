@@ -4,10 +4,10 @@
 -- Annotation implementation is inspired by haskell-src-exts.
 module Language.Lua.Annotated.Syntax where
 
-import Prelude hiding (EQ, GT, LT)
-import Data.Data
-import GHC.Generics (Generic)
-import Control.DeepSeq (NFData)
+import           Control.DeepSeq (NFData)
+import           Data.Data       (Data, Typeable)
+import           GHC.Generics    (Generic)
+import           Prelude         hiding (EQ, GT, LT)
 
 data Name a = Name a String deriving (Show, Eq, Functor, Data, Typeable)
 

@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-hi-shadowing
-                -fno-warn-name-shadowing
-                -fno-warn-unused-do-bind #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 -- | Lua pretty-printer.
@@ -12,10 +9,10 @@ module Language.Lua.PrettyPrinter
   , LPretty
   ) where
 
-import Prelude hiding (EQ, GT, LT)
-import Text.PrettyPrint.Leijen hiding ((<$>))
+import           Prelude                 hiding (EQ, GT, LT)
+import           Text.PrettyPrint.Leijen hiding ((<$>))
 
-import Language.Lua.Syntax
+import           Language.Lua.Syntax
 
 intercalate :: Doc -> [Doc] -> Doc
 intercalate s elems = sep (punctuate s elems)

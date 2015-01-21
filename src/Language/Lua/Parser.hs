@@ -6,15 +6,14 @@ module Language.Lua.Parser
   , chunk
   ) where
 
-import qualified Language.Lua.Annotated.Parser as A
-import Language.Lua.Annotated.Simplify
-import Language.Lua.Syntax
+import           Control.Monad                   (liftM)
+import           Prelude                         hiding (exp)
+import           Text.Parsec
+import           Text.Parsec.LTok
 
-import Text.Parsec
-import Text.Parsec.LTok
-import Control.Monad (liftM)
-
-import Prelude hiding (exp)
+import qualified Language.Lua.Annotated.Parser   as A
+import           Language.Lua.Annotated.Simplify
+import           Language.Lua.Syntax
 
 parseText :: Parser a -> String -> Either ParseError a
 parseText = A.parseText

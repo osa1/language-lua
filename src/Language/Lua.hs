@@ -8,7 +8,8 @@ module Language.Lua
   , pprint
   ) where
 
-import Prelude hiding (exp)
-import Language.Lua.Syntax
-import Language.Lua.Parser
-import Language.Lua.PrettyPrinter
+import           Prelude                    hiding (exp)
+
+import           Language.Lua.Parser
+import           Language.Lua.PrettyPrinter
+import           Language.Lua.Syntax
