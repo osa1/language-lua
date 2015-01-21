@@ -9,7 +9,7 @@ import           Data.Data       (Data, Typeable)
 import           GHC.Generics    (Generic)
 import           Prelude         hiding (EQ, GT, LT)
 
-data Name a = Name a String deriving (Show, Eq, Functor, Data, Typeable)
+data Name a = Name a String deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data Stat a
     = Assign a [Var a] [Exp a] -- ^var1, var2 .. = exp1, exp2 ..
@@ -264,6 +264,7 @@ instance Annotated FunArg where
     amap f (TableArg a x1) = TableArg (f a) x1
     amap f (StringArg a x1) = StringArg (f a) x1
 
+instance NFData a => NFData (Name a)
 instance NFData a => NFData (Stat a)
 instance NFData a => NFData (Exp a)
 instance NFData a => NFData (Var a)
