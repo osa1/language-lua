@@ -19,7 +19,7 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 import           Control.Applicative
-import           Control.DeepSeq                 (deepseq)
+import           Control.DeepSeq                 (deepseq, force)
 import           Control.Monad                   (forM_)
 import           Data.Char                       (isSpace)
 import           GHC.Generics
@@ -126,7 +126,7 @@ parseFilesTest msg root = testCase msg $ do
     ret <- P.parseFile luaFile
     case ret of
       Left err -> assertFailure ("Parser error in " ++ luaFile ++ ": " ++ show err)
-      Right _  -> return ()
+      Right st -> force st `seq` return ()
 
 genPrintParse :: TestTree
 genPrintParse =
