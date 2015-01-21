@@ -14,7 +14,7 @@ script:
 
 after_script:
  - cabal install hpc-coveralls
- - hpc-coveralls test doctests
+ - hpc-coveralls tests
 
 notifications:
   email:
