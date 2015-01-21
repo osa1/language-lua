@@ -5,7 +5,10 @@ Description:
     .
     Changelog:
     .
-
+    \0.6.1:
+    .
+    - `Generic` and `NFData` instances are implemented for syntax trees.
+    .
     \0.6.0:
     .
     - Fixed a long string literal parsing bug which was causing long strings to
@@ -79,7 +82,7 @@ Description:
     - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate
       resulting tree with source positions.
 
-Version:             0.6.0
+Version:             0.6.1
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
