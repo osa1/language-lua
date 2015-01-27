@@ -5,6 +5,11 @@ Description:
     .
     Changelog:
     .
+    \0.6.2:
+    .
+    - `base` dependency is relaxed for GHC 7.10. Note that alex version
+      >3.1.4 is required to compile with GHC 7.10.
+    .
     \0.6.1:
     .
     - `Generic` and `NFData` instances are implemented for syntax trees.
@@ -82,7 +87,7 @@ Description:
     - Syntax tree is annotated. All parsers(`parseText`, `parseFile`) annotate
       resulting tree with source positions.
 
-Version:             0.6.1
+Version:             0.6.2
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
