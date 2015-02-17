@@ -101,6 +101,9 @@ Stability:           Experimental
 Cabal-version:       >= 1.9.2
 
 Extra-source-files:  src/Text/PrettyPrint/LICENSE
+                     tests/numbers
+                     tests/strings
+                     lua-5.2.2-tests/*.lua
 
 Source-repository head
   Type:              git
