@@ -197,32 +197,37 @@ testAndEndString (_,_,_,s) len = do
 {-# INLINE mkString #-}
 mkString :: Bool -> String -> Int -> AlexPosn -> LTok
 mkString True s l posn =
-    -- double quoted string, to make it Haskell readable:
-    -- replace \\n with \n
-    -- replace character codes with characters manually
+    -- double quoted string, to make it Haskell readable
     (LTokSLit (readString posn $ r (replaceCharCodes (take l s))), posn)
   where
     -- we could handle \z while reading characters, at the cost of adding
     -- more state to the lexer. I wanted to go with simplest
     -- implementation.
     r ('\\' : 'z' : rest) = r (skipWS rest)
+    -- handle newline escaping
     r ('\\' : '\n' : rest) = '\n' : r rest
-    r ('\\' : '\'' : rest) = '\'' : r rest -- handle redundant escaping
+    -- skip escaped backslash
+    r ('\\' : '\\' : rest) = '\\' : '\\' : r rest
+    -- quote already escaped, Lua allows this. (ie. "\'")
+    r ('\\' : '\'' : rest) = '\'' : r rest
+
     r (c : rest) = c : r rest
     r [] = []
 mkString False s l posn =
-    -- single quoted string, to make it Haskell readable:
-    -- replace \\n with \n
-    -- replace wrapping single quotes with double quotes
-    -- replace escaped single quotes in the string with single quotes
-    -- replace non-escaped double quotes in the string with escaped double quotes
-    -- replace character codes with characters manually
+    -- single quoted string, to make it Haskell readable
     (LTokSLit (readString posn $ '"' : r (replaceCharCodes (take (l-2) $ drop 1 s)) ++ "\""), posn)
   where
+    -- handle \z
     r ('\\' : 'z' : rest) = r (skipWS rest)
+    -- handle newline escaping
     r ('\\' : '\n' : rest) = '\n' : r rest
+    -- skip escaped backslash
+    r ('\\' : '\\' : rest) = '\\' : '\\' : r rest
+    -- escaped single quote, remove the escaping
     r ('\\' : '\'' : rest) = '\'' : r rest
-    r ('\\' : '\"' : rest) = '\\' : '"' : r rest -- handle redundant escaping
+    -- double quote already escaped, Lua allows this. (ie. '\"')
+    r ('\\' : '"' : rest) = '\\' : '"' : r rest
+    -- unescaped double quote, escape it
     r ('"' : rest) = '\\' : '"' : r rest
     r (c : rest) = c : r rest
     r [] = []

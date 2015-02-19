@@ -101,6 +101,9 @@ regressions = testGroup "Regression tests"
     , testCase "Lexing unnecessarily escaped quotes" $ do
         show (L.llex "'\\\"'") `deepseq` return ()
         show (L.llex "\"\\\'\"") `deepseq` return ()
+    , testCase "Lexing Lua string: '\\\\\"'" $ do
+        assertEqual "String lexed wrong"
+          [T.LTokSLit "\\\"", T.LTokEof] (map fst $ L.llex "'\\\\\"'")
     , testCase "Lexing long literal `[====[ ... ]====]`" $
         show (L.llex "[=[]]=]") `deepseq` return ()
     , testCase "Handling \\z" $
