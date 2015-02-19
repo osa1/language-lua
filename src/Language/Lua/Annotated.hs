@@ -1,6 +1,7 @@
 module Language.Lua.Annotated
   ( module Language.Lua.Annotated.Syntax
   , parseText
+  , parseNamedText
   , parseFile
   , stat
   , exp

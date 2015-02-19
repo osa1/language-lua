@@ -1,6 +1,7 @@
 module Language.Lua
   ( module Language.Lua.Syntax
   , parseText
+  , parseNamedText
   , parseFile
   , stat
   , exp
