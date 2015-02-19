@@ -3,7 +3,7 @@ Name:                language-lua
 Description:
     Lua 5.2 lexer, parser and pretty-printer.
 
-Version:             0.6.2.1
+Version:             0.6.3
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues

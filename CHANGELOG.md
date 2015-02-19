@@ -1,5 +1,10 @@
 ## Changelog
 
+#### 0.6.3
+
+- Fixed some issues with string parsing. (#17)
+- Added `named` variant of text parsers to allow specifying source names. (#18)
+
 #### 0.6.2.1
 
 - Missing test files are added to Cabal package.
