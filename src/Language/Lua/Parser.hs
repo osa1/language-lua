@@ -1,5 +1,6 @@
 module Language.Lua.Parser
   ( parseText
+  , parseNamedText
   , parseFile
   , stat
   , exp
@@ -17,6 +18,9 @@ import           Language.Lua.Syntax
 
 parseText :: Parser a -> String -> Either ParseError a
 parseText = A.parseText
+
+parseNamedText :: Parser a -> String -> String -> Either ParseError a
+parseNamedText = A.parseNamedText
 
 parseFile :: FilePath -> IO (Either ParseError Block)
 parseFile = (liftM . liftM $ sBlock) . A.parseFile

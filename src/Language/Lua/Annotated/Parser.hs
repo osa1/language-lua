@@ -2,6 +2,7 @@
 
 module Language.Lua.Annotated.Parser
   ( parseText
+  , parseNamedText
   , parseFile
   , stat
   , exp
@@ -22,6 +23,11 @@ import           Language.Lua.Token
 -- statements, and @parseText exp@ to parse expressions.
 parseText :: Parser a -> String -> Either ParseError a
 parseText p s = parse p "<string>" (llex s)
+
+-- | Runs Lua lexer before parsing. Use @parseNamedText stat "name"@ to parse
+-- statements, and @parseText exp "name"@ to parse expressions.
+parseNamedText :: Parser a -> String -> String -> Either ParseError a
+parseNamedText p n s = parse p n (llex s)
 
 -- | Parse a Lua file. You can use @parseText chunk@ to parse a file from a string.
 parseFile :: FilePath -> IO (Either ParseError (Block SourcePos))
