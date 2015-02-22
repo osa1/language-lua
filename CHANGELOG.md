@@ -1,5 +1,9 @@
 ## Changelog
 
+#### 0.6.3.1
+
+- `Build-tools` field is added to Cabal file.
+
 #### 0.6.3
 
 - Fixed some issues with string parsing. (#17)
