@@ -146,9 +146,6 @@ genPrintParse =
     printAndParseEq :: Block -> Property
     printAndParseEq b = Right b === (P.parseText P.chunk . show . pprint) b
 
-instance Eq P.ParseError where
-    _ == _ = False
-
 -- * Arbitrary instances
 
 newtype LuaString = LuaString { unwrapLuaString :: String } deriving (Generic)
