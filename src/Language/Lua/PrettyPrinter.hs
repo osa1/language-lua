@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, CPP #-}
 
 -- | Lua pretty-printer.
 module Language.Lua.PrettyPrinter
@@ -9,7 +9,12 @@ module Language.Lua.PrettyPrinter
   , LPretty
   ) where
 
+#if __GLASGOW_HASKELL__ >= 710
+import           Prelude                 hiding (EQ, GT, LT, (<$>))
+#else
 import           Prelude                 hiding (EQ, GT, LT)
+#endif
+
 import           Text.PrettyPrint.Leijen hiding ((<$>))
 
 import           Language.Lua.Syntax

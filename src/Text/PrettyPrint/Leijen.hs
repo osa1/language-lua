@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -w #-}
 {-# OPTIONS_HADDOCK hide #-}
+{-# LANGUAGE CPP #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Text.PrettyPrint.Leijen
@@ -115,6 +116,9 @@ module Text.PrettyPrint.Leijen (
         ) where
 
 import System.IO (Handle,hPutStr,hPutChar,stdout)
+#if __GLASGOW_HASKELL__ >= 710
+import Prelude hiding ((<$>))
+#endif
 
 infixr 5 </>,<//>,<$>,<$$>
 infixr 6 <>,<+>
