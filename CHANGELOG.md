@@ -1,5 +1,9 @@
 ## Changelog
 
+#### 0.6.3.2
+
+- Build fixed for GHC 7.10.
+
 #### 0.6.3.1
 
 - `Build-tools` field is added to Cabal file.
