@@ -14,8 +14,8 @@ before_install:
   - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
   - cabal update
 
-  - travis_retry sudo apt-get install alex-3.1.3
-  - export PATH=/opt/alex/3.1.3/bin:$PATH
+  - travis_retry sudo apt-get install alex-3.1.4
+  - export PATH=/opt/alex/3.1.4/bin:$PATH
 
   - cabal install --only-dependencies --enable-tests
 
