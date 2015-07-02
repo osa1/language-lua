@@ -292,8 +292,6 @@ readString (AlexPn _ line col) s =
       [ "lexical error near line: ", show line, " col: ", show col, ": Cannot read string " ++ show s ]
     Just s' -> s'
 
-data EOF = EOF deriving Show
-
 -- | Lua token with position information.
 type LTok = (LToken, AlexPosn)
 
