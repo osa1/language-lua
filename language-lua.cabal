@@ -20,6 +20,7 @@ Extra-source-files:  src/Text/PrettyPrint/LICENSE
                      tests/numbers
                      tests/strings
                      lua-5.2.2-tests/*.lua
+                     README.md
                      CHANGELOG.md
 
 Source-repository head
