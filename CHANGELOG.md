@@ -1,5 +1,9 @@
 ## Changelog
 
+#### 0.6.3.3
+
+- Some bugs related with assignment statement parsing are fixed(#22).
+
 #### 0.6.3.2
 
 - Build fixed for GHC 7.10.
