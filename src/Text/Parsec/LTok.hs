@@ -4,6 +4,7 @@
 -- | Lexer/Parsec interface
 module Text.Parsec.LTok
   ( tok
+  , tok'
   , anyIdent
   , number
   , stringlit
@@ -35,6 +36,9 @@ nextPos pos _ []                    = pos
 -- | Parses given `LToken`.
 tok :: (Stream [LTok] m LTok) => LToken -> ParsecT [LTok] u m LToken
 tok t = satisfy (\(t', _) -> t' == t) <?> show t
+
+tok' :: (Stream [LTok] m LTok) => LToken -> ParsecT [LTok] u m ()
+tok' p = tok p >> return ()
 
 -- | Parses a `LTokIdent`.
 anyIdent :: Monad m => ParsecT [LTok] u m String

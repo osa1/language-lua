@@ -188,6 +188,9 @@ instance LPretty Stat where
       where
         printIf ((guard, block) : xs) e =
           nest 2 (text "if" <+> pprint guard <+> text "then" <$> pprint block) <$> printIf' xs e
+        printIf [] _ =
+          error $ "pprint: Trying to print invalid syntax:\n\t" ++
+                  "if statement should have at least one case"
 
         printIf' [] Nothing  = text "end"
         printIf' [] (Just b) = nest 2 (text "else" <$> pprint b) <$> text "end"

@@ -76,7 +76,7 @@ suffixExp = selectName <|> selectExp <|> selectMethod <|> funarg
         selectExp    = SSelectExp <$> getPosition <*> brackets exp
         selectMethod = do
           pos <- getPosition
-          tok LTokColon
+          tok' LTokColon
           SSelectMethod pos <$> name <*> funArg
         funarg       = SFunCall <$> getPosition <*> funArg
 
@@ -90,8 +90,8 @@ sexpToPexp (SuffixedExp _ t r) = case r of
 
   where t' :: PrefixExp SourcePos
         t' = case t of
-               PName pos name -> PEVar pos (VarName pos name)
-               PParen pos exp -> Paren pos exp
+               PName pos  n -> PEVar pos (VarName pos n)
+               PParen pos e -> Paren pos e
 
         iter :: [SuffixExp SourcePos] -> PrefixExp SourcePos -> PrefixExp SourcePos
         iter [] pe                                = pe
@@ -102,10 +102,10 @@ sexpToPexp (SuffixedExp _ t r) = case r of
 
 -- TODO: improve error messages.
 sexpToVar :: SuffixedExp SourcePos -> Parser (Var SourcePos)
-sexpToVar (SuffixedExp pos (PName _ name) []) = return (VarName pos name)
+sexpToVar (SuffixedExp pos (PName _ n) []) = return (VarName pos n)
 sexpToVar (SuffixedExp _ _ []) = fail "syntax error"
 sexpToVar sexp = case sexpToPexp sexp of
-                   PEVar _ var -> return var
+                   PEVar _ v -> return v
                    _ -> fail "syntax error"
 
 sexpToFunCall :: SuffixedExp SourcePos -> Parser (FunCall SourcePos)
@@ -134,7 +134,7 @@ funBody = do
     pos <- getPosition
     (params, vararg) <- arglist
     body <- block
-    tok LTokEnd
+    tok' LTokEnd
     return $ FunBody pos params vararg body
 
   where lastarg = do
@@ -158,7 +158,7 @@ block = do
 
 retstat :: Parser [Exp SourcePos]
 retstat = do
-  tok LTokReturn
+  tok' LTokReturn
   exps <- exp `sepBy` tok LTokComma
   optional (tok LTokSemic)
   return exps
@@ -169,7 +169,7 @@ tableField = choice [ expField, try namedField, field ]
         expField = do
             pos <- getPosition
             e1 <- brackets exp
-            tok LTokAssign
+            tok' LTokAssign
             e2 <- exp
             return $ ExpField pos e1 e2
 
@@ -177,7 +177,7 @@ tableField = choice [ expField, try namedField, field ]
         namedField = do
             pos <- getPosition
             name' <- name
-            tok LTokAssign
+            tok' LTokAssign
             val <- exp
             return $ NamedField pos name' val
 
@@ -214,7 +214,7 @@ varargExp = (Vararg <$> getPosition) <* tok LTokEllipsis
 
 fundefExp = do
   pos <- getPosition
-  tok LTokFunction
+  tok' LTokFunction
   body <- funBody
   return $ EFunDef pos (FunDef (ann body) body)
 
@@ -291,14 +291,13 @@ emptyStat = (EmptyStat <$> getPosition) <* tok LTokSemic
 assignStat = do
   pos <- getPosition
   vars <- varlist
-  tok LTokAssign
+  tok' LTokAssign
   exps <- explist
   return $ Assign pos vars exps
 
 funCallStat = FunCall <$> getPosition <*> funCall
 
-labelStat = Label <$> getPosition <*> label
-  where label = between (tok LTokDColon) (tok LTokDColon) name
+labelStat = Label <$> getPosition <*> between (tok LTokDColon) (tok LTokDColon) name
 
 breakStat = (Break <$> getPosition) <* tok LTokBreak
 
@@ -311,15 +310,15 @@ whileStat = do
   between (tok LTokWhile)
           (tok LTokEnd)
           (do cond <- exp
-              tok LTokDo
+              tok' LTokDo
               body <- block
               return $ While pos cond body)
 
 repeatStat = do
   pos <- getPosition
-  tok LTokRepeat
+  tok' LTokRepeat
   body <- block
-  tok LTokUntil
+  tok' LTokUntil
   cond <- exp
   return $ Repeat pos body cond
 
@@ -340,25 +339,25 @@ ifStat = do
 
         cond :: Parser (Exp SourcePos, Block SourcePos)
         cond = do
-            cond <- exp
-            tok LTokThen
+            cond' <- exp
+            tok' LTokThen
             body <- block
-            return (cond, body)
+            return (cond', body)
 
         elsePart :: Parser (Block SourcePos)
         elsePart = tok LTokElse >> block
 
 forRangeStat = do
   pos <- getPosition
-  between (tok LTokFor)
-          (tok LTokEnd)
+  between (tok' LTokFor)
+          (tok' LTokEnd)
           (do name' <- name
-              tok LTokAssign
+              tok' LTokAssign
               start <- exp
-              tok LTokComma
+              tok' LTokComma
               end <- exp
               range <- optionMaybe $ tok LTokComma >> exp
-              tok LTokDo
+              tok' LTokDo
               body <- block
               return $ ForRange pos name' start end range body)
 
@@ -367,15 +366,15 @@ forInStat = do
   between (tok LTokFor)
           (tok LTokEnd)
           (do names <- namelist
-              tok LTokIn
+              tok' LTokIn
               exps <- explist
-              tok LTokDo
+              tok' LTokDo
               body <- block
               return $ ForIn pos names exps body)
 
 funAssignStat = do
     pos <- getPosition
-    tok LTokFunction
+    tok' LTokFunction
     name' <- funName
     body <- funBody
     return $ FunAssign pos name' body
@@ -387,15 +386,15 @@ funAssignStat = do
 
 localFunAssignStat = do
   pos <- getPosition
-  tok LTokLocal
-  tok LTokFunction
+  tok' LTokLocal
+  tok' LTokFunction
   name' <- name
   body <- funBody
   return $ LocalFunAssign pos name' body
 
 localAssignStat = do
   pos <- getPosition
-  tok LTokLocal
+  tok' LTokLocal
   names <- namelist
   rest <- optionMaybe $ tok LTokAssign >> explist
   return $ LocalAssign pos names rest
