@@ -108,6 +108,18 @@ regressions = testGroup "Regression tests"
         show (L.llex "[=[]]=]") `deepseq` return ()
     , testCase "Handling \\z" $
         show (L.llex "\"\\z\n  \"") `deepseq` return ()
+    , testCase "varlist parser shouldn't accept empty list of variables in local declarations" $
+        assertParseFailure (P.parseText P.stat "local = test")
+    , testCase "explist parser shouldn't accept empty list of expressions in local declarations" $
+        assertParseFailure (P.parseText P.stat "local x =")
+    , testCase "empty varlist and explist in single assignment, should be rejected" $
+        assertParseFailure (P.parseText P.stat "local =")
+    , testCase "varlist parser shouldn't accept empty list of expressions in global declarations" $
+        assertParseFailure (P.parseText P.stat "= test")
+    , testCase "explist parsers shouldn't accept empty list of expressions in global declarations" $
+        assertParseFailure (P.parseText P.stat "x =")
+    , testCase "empty list of return values should be accpeted" $
+        assertEqual "Parsed wrong" (Right $ Block [] (Just [])) (P.parseText P.chunk "return")
     ]
   where
     pp :: String -> Assertion
@@ -117,6 +129,9 @@ regressions = testGroup "Regression tests"
         Right expr' ->
           assertEqual "Printed string is not equal to original one modulo whitespace"
             (filter (not . isSpace) expr) (filter (not . isSpace) (show $ pprint expr'))
+
+    assertParseFailure (Left _parseError) = return ()
+    assertParseFailure (Right ret) = assertFailure $ "Unexpected parse: " ++ show ret
 
 parseFilesTest :: String -> FilePath -> TestTree
 parseFilesTest msg root = testCase msg $ do

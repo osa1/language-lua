@@ -290,9 +290,9 @@ emptyStat = (EmptyStat <$> getPosition) <* tok LTokSemic
 
 assignStat = do
   pos <- getPosition
-  vars <- var `sepBy` tok LTokComma
+  vars <- varlist
   tok LTokAssign
-  exps <- exp `sepBy` tok LTokComma
+  exps <- explist
   return $ Assign pos vars exps
 
 funCallStat = FunCall <$> getPosition <*> funCall
@@ -366,9 +366,9 @@ forInStat = do
   pos <- getPosition
   between (tok LTokFor)
           (tok LTokEnd)
-          (do names <- name `sepBy` tok LTokComma
+          (do names <- namelist
               tok LTokIn
-              exps <- exp `sepBy` tok LTokComma
+              exps <- explist
               tok LTokDo
               body <- block
               return $ ForIn pos names exps body)
@@ -396,8 +396,8 @@ localFunAssignStat = do
 localAssignStat = do
   pos <- getPosition
   tok LTokLocal
-  names <- name `sepBy` tok LTokComma
-  rest <- optionMaybe $ tok LTokAssign >> exp `sepBy` tok LTokComma
+  names <- namelist
+  rest <- optionMaybe $ tok LTokAssign >> explist
   return $ LocalAssign pos names rest
 
 -- | Statement parser.
@@ -418,6 +418,20 @@ stat =
          , try localFunAssignStat
          , localAssignStat
          ]
+
+-----------------------------------------------------------------------
+---- Utilities/helpers
+
+varlist :: Parser [Var SourcePos]
+varlist = var `sepBy1` tok LTokComma
+
+namelist :: Parser [Name SourcePos]
+namelist = name `sepBy1` tok LTokComma
+
+explist :: Parser [Exp SourcePos]
+explist = exp `sepBy1` tok LTokComma
+
+-----------------------------------------------------------------------
 
 -- | Lua file parser.
 chunk :: Parser (Block SourcePos)
