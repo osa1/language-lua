@@ -1,5 +1,4 @@
-{-# LANGUAGE FlexibleContexts, NoMonomorphismRestriction #-}
-{-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- | Lexer/Parsec interface
 module Text.Parsec.LTok
