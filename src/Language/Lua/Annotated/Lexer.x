@@ -8,7 +8,6 @@ module Language.Lua.Annotated.Lexer
   , AlexPosn(..)
   ) where
 
-import Language.Lua.Annotated.Syntax
 import Language.Lua.Token
 import Control.Applicative ((<$>))
 import Control.Monad (forM_, unless, when)
