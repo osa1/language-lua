@@ -3,6 +3,7 @@
 #### 0.6.3.3
 
 - Some bugs related with assignment statement parsing are fixed(#22).
+- Wrong error message for expected `==` operator is fixed(#23).
 
 #### 0.6.3.2
 
