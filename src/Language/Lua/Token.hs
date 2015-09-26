@@ -66,7 +66,7 @@ instance Show LToken where
     show LTokPercent       = "`%`"
     show LTokExp           = "`^`"
     show LTokSh            = "`#`"
-    show LTokEqual         = "`=`"
+    show LTokEqual         = "`==`"
     show LTokNotequal      = "`~=`"
     show LTokLEq           = "`<=`"
     show LTokGEq           = "`>=`"
