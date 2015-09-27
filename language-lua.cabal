@@ -3,7 +3,7 @@ Name:                language-lua
 Description:
     Lua 5.3 lexer, parser and pretty-printer.
 
-Version:             0.6.3.3
+Version:             0.7.0
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
@@ -14,7 +14,7 @@ Maintainer:          omeragacan@gmail.com
 Category:            Language
 Build-type:          Simple
 Stability:           Experimental
-Cabal-version:       >= 1.9.2
+Cabal-version:       >= 1.10
 
 Extra-source-files:  src/Text/PrettyPrint/LICENSE
                      tests/numbers

@@ -1,5 +1,10 @@
 ## Changelog
 
+#### 0.7.0
+
+- `language-lua` now supports Lua 5.3.
+- Some warnings printed with `base >= 4.8` are fixed.
+
 #### 0.6.3.3
 
 - Some bugs related with assignment statement parsing are fixed(#22).
