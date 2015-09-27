@@ -42,7 +42,16 @@ propertyTests :: TestTree
 propertyTests = testGroup "Property tests" [{-genPrintParse-}]
 
 parseExps :: String -> String -> Either P.ParseError [A.Exp P.SourcePos]
-parseExps file contents = P.runParser (many A.exp) () file (L.llex contents)
+parseExps file contents =
+  case L.llex contents of
+    Left (msg,pos) -> P.runParser (reportLexError msg pos) () file []
+    Right xs -> P.runParser (many A.exp) () file xs
+
+reportLexError :: Monad m => String -> L.AlexPosn -> P.ParsecT s u m a
+reportLexError msg (L.AlexPn _ line column) =
+  do pos <- P.getPosition
+     P.setPosition (pos `P.setSourceLine` line `P.setSourceColumn` column)
+     fail ("lexical error: " ++ msg)
 
 stringTests :: TestTree
 stringTests = testGroup "String tests"
@@ -84,7 +93,7 @@ numberTests = testGroup "Number tests"
 regressions :: TestTree
 regressions = testGroup "Regression tests"
     [ testCase "Lexing comment with text \"EOF\" in it" $
-        assertEqual "Lexing is wrong" [(T.LTokEof, L.AlexPn (-1) (-1) (-1))] (L.llex "--EOF")
+        assertEqual "Lexing is wrong" (Right [(T.LTokEof, L.AlexPn (-1) (-1) (-1))]) (L.llex "--EOF")
     , testCase "Binary/unary operator parsing/printing" $ do
         pp "2^3^2 == 2^(3^2)"
         pp "2^3*4 == (2^3)*4"
@@ -103,7 +112,7 @@ regressions = testGroup "Regression tests"
         show (L.llex "\"\\\'\"") `deepseq` return ()
     , testCase "Lexing Lua string: '\\\\\"'" $ do
         assertEqual "String lexed wrong"
-          [T.LTokSLit "\\\"", T.LTokEof] (map fst $ L.llex "'\\\\\"'")
+          (Right [T.LTokSLit "\\\"", T.LTokEof]) (fmap (map fst) $ L.llex "'\\\\\"'")
     , testCase "Lexing long literal `[====[ ... ]====]`" $
         show (L.llex "[=[]]=]") `deepseq` return ()
     , testCase "Handling \\z" $

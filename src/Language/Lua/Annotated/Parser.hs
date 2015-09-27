@@ -29,16 +29,25 @@ import           Control.Applicative           ((<$>), (<*), (<*>))
 -- | Runs Lua lexer before parsing. Use @parseText stat@ to parse
 -- statements, and @parseText exp@ to parse expressions.
 parseText :: Parser a -> String -> Either ParseError a
-parseText p s = parse p "<string>" (llex s)
+parseText p = parseNamedText p "<string>"
 
 -- | Runs Lua lexer before parsing. Use @parseNamedText stat "name"@ to parse
 -- statements, and @parseText exp "name"@ to parse expressions.
 parseNamedText :: Parser a -> String -> String -> Either ParseError a
-parseNamedText p n s = parse p n (llex s)
+parseNamedText p n s =
+  case llex s of
+    Left (e,pos) -> parse (reportLexError e pos) n []
+    Right xs -> parse p n xs
+
+reportLexError :: String -> AlexPosn -> Parser a
+reportLexError msg (AlexPn _ line column) =
+  do pos <- getPosition
+     setPosition (pos `setSourceLine` line `setSourceColumn` column)
+     fail ("lexical error: " ++ msg)
 
 -- | Parse a Lua file. You can use @parseText chunk@ to parse a file from a string.
 parseFile :: FilePath -> IO (Either ParseError (Block SourcePos))
-parseFile path = parse chunk path . llex <$> readFile path
+parseFile path = parseNamedText chunk path <$> readFile path
 
 parens :: Monad m => ParsecT [LTok] u m a -> ParsecT [LTok] u m a
 parens = between (tok LTokLParen) (tok LTokRParen)

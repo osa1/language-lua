@@ -328,8 +328,7 @@ alexMonadScan' = do
     AlexEOF -> do cs <- getCommentState
                   when cs endString
                   alexEOF
-    AlexError ((AlexPn _ line col),ch,_) -> alexError $ concat
-        [ "lexical error near line: " , show line , " col: " , show col , " at char " , [ch] ]
+    AlexError ((AlexPn _ line col),ch,_) -> alexError ("at char " ++ [ch])
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'
@@ -337,7 +336,7 @@ alexMonadScan' = do
         alexSetInput inp'
         action inp len
 
-scanner :: String -> Either String [LTok]
+scanner :: String -> Either (String,AlexPosn) [LTok]
 scanner str = runAlex str loop
   where loop = do
           t@(tok, _) <- alexMonadScan'
@@ -356,13 +355,11 @@ dropSpecialComment xs = xs
 -- Newline is preserved in order to ensure that line numbers stay correct
 
 -- | Lua lexer.
-llex :: String -> [LTok]
-llex s = case scanner (dropSpecialComment s) of
-           Left err -> error err
-           Right r  -> r
+llex :: String -> Either (String,AlexPosn) [LTok]
+llex = scanner . dropSpecialComment
 
 -- | Run Lua lexer on a file.
-llexFile :: FilePath -> IO [LTok]
+llexFile :: FilePath -> IO (Either (String,AlexPosn) [LTok])
 llexFile = fmap llex . readFile
 
 ------------------------------------------------------------------------
@@ -454,7 +451,7 @@ data AlexState = AlexState {
 
 -- Compile with -funbox-strict-fields for best results!
 
-runAlex :: String -> Alex a -> Either String a
+runAlex :: String -> Alex a -> Either (String,AlexPosn) a
 runAlex input (Alex f)
    = case f (AlexState {alex_pos = alexStartPos,
                         alex_inp = input,
@@ -462,13 +459,13 @@ runAlex input (Alex f)
 
                         alex_ust = alexInitUserState,
 
-                        alex_scd = 0}) of Left msg -> Left msg
+                        alex_scd = 0}) of Left e -> Left e
                                           Right ( _, a ) -> Right a
 
-newtype Alex a = Alex { unAlex :: AlexState -> Either String (AlexState, a) }
+newtype Alex a = Alex { unAlex :: AlexState -> Either (String,AlexPosn) (AlexState, a) }
 
 alexError :: String -> Alex a
-alexError message = Alex $ \s -> Left message
+alexError message = Alex $ \s -> Left (message, alex_pos s)
 
 alexGetStartCode :: Alex Int
 alexGetStartCode = Alex $ \s@AlexState{alex_scd=sc} -> Right (s, sc)
