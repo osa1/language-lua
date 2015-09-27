@@ -28,6 +28,12 @@ data LToken = LTokPlus               -- ^+
             | LTokDot                -- ^.
             | LTokDDot               -- ^..
             | LTokEllipsis           -- ^...
+            | LTokDLT                -- ^<<
+            | LTokDGT                -- ^>>
+            | LTokAmpersand          -- ^&
+            | LTokPipe               -- ^|
+            | LTokDSlash             -- ^//
+            | LTokTilde              -- ^~
 
             | LTokAnd                -- ^and
             | LTokBreak              -- ^break
@@ -86,6 +92,12 @@ instance Show LToken where
     show LTokDot           = "`.`"
     show LTokDDot          = "`..`"
     show LTokEllipsis      = "`...`"
+    show LTokDLT           = "`<<`"
+    show LTokDGT           = "`>>`"
+    show LTokAmpersand     = "`&`"
+    show LTokPipe          = "`|`"
+    show LTokDSlash        = "`//`"
+    show LTokTilde         = "`~`"
 
     show LTokAnd           = "`and`"
     show LTokBreak         = "`break`"

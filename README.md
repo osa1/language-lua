@@ -1,4 +1,4 @@
-language-lua - Lua 5.2 lexer, parser and pretty-printer
+language-lua - Lua 5.3 lexer, parser and pretty-printer
 -------------------------------------------------------
 
 [![Build Status](https://travis-ci.org/osa1/language-lua.svg?branch=master)](https://travis-ci.org/osa1/language-lua)

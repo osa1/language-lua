@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
--- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
+-- | Lua 5.3 syntax tree, as specified in <http://www.lua.org/manual/5.3/manual.html#9>.
 module Language.Lua.Syntax where
 
 import           Control.DeepSeq (NFData)
@@ -49,9 +49,10 @@ data Var
 
 data Binop = Add | Sub | Mul | Div | Exp | Mod | Concat
     | LT | LTE | GT | GTE | EQ | NEQ | And | Or
+    | ShiftL | ShiftR | BAnd | BOr | BXor
     deriving (Show, Eq, Data, Typeable, Generic)
 
-data Unop = Neg | Not | Len
+data Unop = Neg | Not | Len | Complement
     deriving (Show, Eq, Data, Typeable, Generic)
 
 data PrefixExp

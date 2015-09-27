@@ -85,11 +85,17 @@ instance LPretty Binop where
     pprint NEQ    = text "~="
     pprint And    = text "and"
     pprint Or     = text "or"
+    pprint BAnd   = char '&'
+    pprint BOr    = char '|'
+    pprint BXor   = char '~'
+    pprint ShiftL = text "<<"
+    pprint ShiftR = text ">>"
 
 instance LPretty Unop where
     pprint Neg = char '-'
     pprint Not = text "not "
     pprint Len = char '#'
+    pprint Complement = char '~'
 
 getBinopPrec :: Binop -> (Precedence, Precedence)
 getBinopPrec op =
@@ -101,6 +107,11 @@ getBinopPrec op =
       Exp -> (14, 13)
       Mod -> (11, 11)
       Concat -> (9, 8)
+      ShiftL -> (7, 7)
+      ShiftR -> (7, 7)
+      BAnd -> (6, 6)
+      BXor -> (5, 5)
+      BOr -> (4, 4)
       LT -> (3, 3)
       LTE -> (3, 3)
       GT -> (3, 3)
