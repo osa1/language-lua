@@ -15,6 +15,7 @@ import Data.Char (GeneralCategory(..),generalCategory,isAscii,isNumber,isSpace,c
 import Data.List (foldl')
 import Data.Word (Word8)
 import Data.Bits ((.&.),shiftR)
+import Control.Applicative (Applicative(..))
 
 }
 
