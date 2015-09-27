@@ -31,8 +31,8 @@ $sqstr    = \0-\255 # [ \' \n \\ ]       -- valid character in a string literal 
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfa\\\?'"] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n]*)
-@charescs  = \\ ([ntvbrfa\\\?"'] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n]*)
+@charescd  = \\ ([ntvbrfa\\'"] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n\r\f\v]*)
+@charescs  = \\ ([ntvbrfa\\"'] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n\r\f\v]*)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -57,8 +57,8 @@ tokens :-
     <0> @hexprefix @hexdigits @expparthex    { tokWValue LTokNum }
     <0> @hexprefix @mantparthex @expparthex? { tokWValue LTokNum }
 
-    <0> \"($dqstr|@charescd)*\" { \(posn,_,s) l -> return $ mkString True  s l posn }
-    <0> \'($sqstr|@charescs)*\' { \(posn,_,s) l -> return $ mkString False s l posn }
+    <0> \"($dqstr|@charescd)*\" { \(posn,_,s) l -> return $ mkString s l posn }
+    <0> \'($sqstr|@charescs)*\' { \(posn,_,s) l -> return $ mkString s l posn }
 
     -- long strings
     <0> \[ \=* \[ \n?        { enterString `andBegin` state_string }
@@ -195,79 +195,16 @@ testAndEndString (_,_,s) len = do
                 return (LTokSLit (reverse val), posn)
 
 {-# INLINE mkString #-}
-mkString :: Bool -> String -> Int -> AlexPosn -> LTok
-mkString True s l posn =
-    -- double quoted string, to make it Haskell readable
-    (LTokSLit (encodeString (readString posn (r (replaceCharCodes (take l s))))), posn)
-  where
-    -- we could handle \z while reading characters, at the cost of adding
-    -- more state to the lexer. I wanted to go with simplest
-    -- implementation.
-    r ('\\' : 'z' : rest) = r (skipWS rest)
-    -- handle newline escaping
-    r ('\\' : '\n' : rest) = '\n' : r rest
-    -- skip escaped backslash
-    r ('\\' : '\\' : rest) = '\\' : '\\' : r rest
-    -- quote already escaped, Lua allows this. (ie. "\'")
-    r ('\\' : '\'' : rest) = '\'' : r rest
-
-    r (c : rest) = c : r rest
-    r [] = []
-mkString False s l posn =
-    -- single quoted string, to make it Haskell readable
-    (LTokSLit (encodeString (readString posn ( '"' : r (replaceCharCodes (take (l-2) (drop 1 s))) ++ "\""))), posn)
-  where
-    -- handle \z
-    r ('\\' : 'z' : rest) = r (skipWS rest)
-    -- handle newline escaping
-    r ('\\' : '\n' : rest) = '\n' : r rest
-    -- skip escaped backslash
-    r ('\\' : '\\' : rest) = '\\' : '\\' : r rest
-    -- escaped single quote, remove the escaping
-    r ('\\' : '\'' : rest) = '\'' : r rest
-    -- double quote already escaped, Lua allows this. (ie. '\"')
-    r ('\\' : '"' : rest) = '\\' : '"' : r rest
-    -- unescaped double quote, escape it
-    r ('"' : rest) = '\\' : '"' : r rest
-    r (c : rest) = c : r rest
-    r [] = []
-
-replaceCharCodes :: String -> String
-replaceCharCodes s =
-  case s of
-    ('\\' : 'x' : h1 : h2 : rest) -> toEnum (hexToInt h1 * 16 + hexToInt h2) : replaceCharCodes rest
-    ('\\' : 'u' : '{' : rest) ->
-        case break (=='}') rest of
-          (ds,_:rest')
-             | code <= 0x10ffff -> chr code : replaceCharCodes rest'
-             | otherwise        -> '\xFFFD' : replaceCharCodes rest'
-             where code = foldl' (\acc d -> acc * 16 + hexToInt d) 0 ds
-          _ -> error "lexical error: unterminated unicode escape"
-    ('\\' : c1 : c2 : c3 : rest)
-      | isNumber c1 && isNumber c2 && isNumber c3 ->
-          toEnum (decToNum c1 * 100 + decToNum c2 * 10 + decToNum c3) : replaceCharCodes rest
-      | isNumber c1 && isNumber c2 ->
-          toEnum (decToNum c1 * 10 + decToNum c2) : replaceCharCodes (c3 : rest)
-      | isNumber c1 ->
-          toEnum (decToNum c1) : replaceCharCodes (c2 : c3 : rest)
-      | otherwise ->
-          '\\' : c1 : replaceCharCodes (c2 : c3 : rest)
-    ['\\', c1, c2]
-      | isNumber c1 && isNumber c2 ->
-          [toEnum (decToNum c1 * 10 + decToNum c2)]
-      | isNumber c1 ->
-          toEnum (decToNum c1) : replaceCharCodes [c2]
-      | otherwise -> s
-    ['\\', c1]
-      | isNumber c1 -> [toEnum (decToNum c1)]
-      | otherwise -> s
-    (c : rest) -> c : replaceCharCodes rest
-    [] -> []
+mkString :: String -> Int -> AlexPosn -> LTok
+mkString s l posn = (LTokSLit (readString posn (take (l-2) (drop 1 s))), posn)
 
 skipWS :: String -> String
 skipWS (' '  : rest) = skipWS rest
 skipWS ('\n' : rest) = skipWS rest
+skipWS ('\r' : rest) = skipWS rest
+skipWS ('\f' : rest) = skipWS rest
 skipWS ('\t' : rest) = skipWS rest
+skipWS ('\v' : rest) = skipWS rest
 skipWS str           = str
 
 hexToInt :: Char -> Int
@@ -293,10 +230,50 @@ decToNum c = fromEnum c - fromEnum '0'
 
 
 readString :: AlexPosn -> String -> String
-readString (AlexPn _ line col) s =
-  case reads s of
-    [(s',trail)] | all isSpace trail -> s'
-    _ -> error $ concat
+readString (AlexPn _ line col) s = aux s
+  where
+  aux xxs =
+    case xxs of
+      [] -> []
+      '\\' : 'x' : h1 : h2 : rest -> chr (hexToInt h1 * 16 + hexToInt h2) : aux rest
+
+      '\\' : 'u' : '{' : rest ->
+        case break (=='}') rest of
+          (ds,_:rest')
+             | code <= 0x10ffff -> encodeChar (chr code) (aux rest')
+             | otherwise        -> encodeChar '\xFFFD' (aux rest')
+             where code = foldl' (\acc d -> acc * 16 + hexToInt d) 0 ds
+          _ -> failure -- would be a bug in the alex lexer
+
+      '\\' : c1 : c2 : c3 : rest
+        | isNumber c1 && isNumber c2 && isNumber c3 ->
+            chr (decToNum c1 * 100 + decToNum c2 * 10 + decToNum c3) : aux rest
+
+      '\\' : c1 : c2 : rest
+        | isNumber c1 && isNumber c2 ->
+            chr (decToNum c1 * 10 + decToNum c2) : aux rest
+
+      '\\' : c1 : rest
+        | isNumber c1 -> chr (decToNum c1) : aux rest
+
+      '\\' : 'a' : rest -> '\a' : aux rest
+      '\\' : 'b' : rest -> '\b' : aux rest
+      '\\' : 'f' : rest -> '\f' : aux rest
+      '\\' : 'n' : rest -> '\n' : aux rest
+      '\\' : '\n' : rest -> '\n' : aux rest
+      '\\' : 'r' : rest -> '\r' : aux rest
+      '\\' : 't' : rest -> '\t' : aux rest
+      '\\' : 'v' : rest -> '\v' : aux rest
+      '\\' : '\\' : rest -> '\\' : aux rest
+      '\\' : '"' : rest -> '"' : aux rest
+      '\\' : '\'' : rest -> '\'' : aux rest
+      '\\' : 'z' : rest -> aux (skipWS rest)
+
+      '\\' : _ -> failure
+
+      c : rest -> encodeChar c (aux rest)
+
+  failure = error $ concat
       [ "lexical error near line: ", show line,
         " col: ", show col, ": Cannot read string " ++ show s ]
 
@@ -406,7 +383,7 @@ alexStartPos = AlexPn 0 1 1
 
 alexGetByte :: AlexInput -> Maybe (Word8,AlexInput)
 alexGetByte (_,_,[]) = Nothing
-alexGetByte (p,_,c:cs) = Just (byteForChar c,(p,c,cs))
+alexGetByte (p,_,c:cs) = Just (byteForChar c,(p',c,cs))
   where p' = alexMove p c
 
 alexMove :: AlexPosn -> Char -> AlexPosn
@@ -518,9 +495,6 @@ instance Monad Alex where
   m >>= k  = Alex $ \s -> case unAlex m s of
                                 Left msg -> Left msg
                                 Right (s',a) -> unAlex (k a) s'
-
-encodeString :: String -> String
-encodeString = foldr encodeChar ""
 
 encodeChar :: Char -> String -> String
 encodeChar c rest
