@@ -76,6 +76,7 @@ sBinop A.Add{} = Add
 sBinop A.Sub{} = Sub
 sBinop A.Mul{} = Mul
 sBinop A.Div{} = Div
+sBinop A.IDiv{} = IDiv
 sBinop A.Exp{} = Exp
 sBinop A.Mod{} = Mod
 sBinop A.Concat{} = Concat

@@ -74,6 +74,7 @@ instance LPretty Binop where
     pprint Sub    = char '-'
     pprint Mul    = char '*'
     pprint Div    = char '/'
+    pprint IDiv   = text "//"
     pprint Exp    = char '^'
     pprint Mod    = char '%'
     pprint Concat = text ".."
@@ -104,6 +105,7 @@ getBinopPrec op =
       Sub -> (10, 10)
       Mul -> (11, 11)
       Div -> (11, 11)
+      IDiv -> (11, 11)
       Exp -> (14, 13)
       Mod -> (11, 11)
       Concat -> (9, 8)

@@ -75,6 +75,7 @@ tokens :-
     <0> "-"   { tok LTokMinus }
     <0> "*"   { tok LTokStar }
     <0> "/"   { tok LTokSlash }
+    <0> "//"  { tok LTokDSlash }
     <0> "%"   { tok LTokPercent }
     <0> "^"   { tok LTokExp }
     <0> "#"   { tok LTokSh }
@@ -103,7 +104,6 @@ tokens :-
     <0> "~"   { tok LTokTilde }
     <0> "<<"  { tok LTokDLT }
     <0> ">>"  { tok LTokDGT }
-    <0> "//"  { tok LTokDGT }
 
 {
 
