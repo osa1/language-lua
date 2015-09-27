@@ -1,7 +1,7 @@
 Name:                language-lua
 
 Description:
-    Lua 5.2 lexer, parser and pretty-printer.
+    Lua 5.3 lexer, parser and pretty-printer.
 
 Version:             0.6.3.3
 Synopsis:            Lua parser and pretty-printer
@@ -19,7 +19,7 @@ Cabal-version:       >= 1.9.2
 Extra-source-files:  src/Text/PrettyPrint/LICENSE
                      tests/numbers
                      tests/strings
-                     lua-5.2.2-tests/*.lua
+                     lua-5.3.1-tests/*.lua
                      README.md
                      CHANGELOG.md
 

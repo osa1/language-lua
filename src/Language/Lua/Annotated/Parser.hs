@@ -1,4 +1,8 @@
-{-# LANGUAGE LambdaCase, TupleSections #-}
+{-# LANGUAGE LambdaCase, TupleSections, CPP #-}
+
+#ifndef MIN_VERSION_base
+#define MIN_VERSION_base(x,y,z) 1
+#endif
 
 module Language.Lua.Annotated.Parser
   ( parseText
@@ -9,7 +13,6 @@ module Language.Lua.Annotated.Parser
   , chunk
   ) where
 
-import           Control.Applicative           ((<$>), (<*), (<*>))
 import           Control.Monad                 (liftM)
 import           Prelude                       hiding (EQ, GT, LT, exp)
 import           Text.Parsec                   hiding (string)
@@ -18,6 +21,10 @@ import           Text.Parsec.LTok
 import           Language.Lua.Annotated.Lexer
 import           Language.Lua.Annotated.Syntax
 import           Language.Lua.Token
+
+#if !(MIN_VERSION_base(4,8,0))
+import           Control.Applicative           ((<$>), (<*), (<*>))
+#endif
 
 -- | Runs Lua lexer before parsing. Use @parseText stat@ to parse
 -- statements, and @parseText exp@ to parse expressions.
@@ -236,6 +243,11 @@ binop = do
     , tok LTokExp >> return (Binop pos (Exp pos), 14, 13)
     , tok LTokPercent >> return (Binop pos (Mod pos), 11, 11)
     , tok LTokDDot >> return (Binop pos (Concat pos), 9, 8)
+    , tok LTokDGT >> return (Binop pos (ShiftR pos), 7, 7)
+    , tok LTokDLT >> return (Binop pos (ShiftL pos), 7, 7)
+    , tok LTokAmpersand >> return (Binop pos (BAnd pos), 6, 6)
+    , tok LTokTilde >> return (Binop pos (BXor pos), 5, 5)
+    , tok LTokPipe >> return (Binop pos (BOr pos), 4, 4)
     , tok LTokLT >> return (Binop pos (LT pos), 3, 3)
     , tok LTokLEq >> return (Binop pos (LTE pos), 3, 3)
     , tok LTokGT >> return (Binop pos (GT pos), 3, 3)
@@ -253,6 +265,7 @@ unop = do
       [ tok LTokMinus >> return Neg
       , tok LTokNot >> return Not
       , tok LTokSh >> return Len
+      , tok LTokTilde >> return Complement
       ]
     return (Unop pos (unopTok pos), 12)
 

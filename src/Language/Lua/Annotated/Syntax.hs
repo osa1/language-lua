@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable, DeriveFunctor, DeriveGeneric #-}
 
--- | Lua 5.2 syntax tree, as specified in <http://www.lua.org/manual/5.2/manual.html#9>.
+-- | Lua 5.3 syntax tree, as specified in <http://www.lua.org/manual/5.3/manual.html#9>.
 -- Annotation implementation is inspired by haskell-src-exts.
 module Language.Lua.Annotated.Syntax where
 
@@ -50,9 +50,10 @@ data Var a
 
 data Binop a = Add a | Sub a | Mul a | Div a | Exp a | Mod a | Concat a
     | LT a | LTE a | GT a | GTE a | EQ a | NEQ a | And a | Or a
+    | ShiftL a | ShiftR a | BAnd a | BOr a | BXor a
     deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
-data Unop a = Neg a | Not a | Len a
+data Unop a = Neg a | Not a | Len a | Complement a
     deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data PrefixExp a
@@ -184,6 +185,11 @@ instance Annotated Binop where
     ann (NEQ a) = a
     ann (And a) = a
     ann (Or a) = a
+    ann (BAnd a) = a
+    ann (BOr a) = a
+    ann (BXor a) = a
+    ann (ShiftL a) = a
+    ann (ShiftR a) = a
 
     amap f (Add a) = Add (f a)
     amap f (Sub a) = Sub (f a)
@@ -200,15 +206,22 @@ instance Annotated Binop where
     amap f (NEQ a) = NEQ (f a)
     amap f (And a) = And (f a)
     amap f (Or a) = Or (f a)
+    amap f (BAnd a) = BAnd (f a)
+    amap f (BOr a) = BOr (f a)
+    amap f (BXor a) = BXor (f a)
+    amap f (ShiftL a) = ShiftL (f a)
+    amap f (ShiftR a) = ShiftR (f a)
 
 instance Annotated Unop where
     ann (Neg a) = a
     ann (Not a) = a
     ann (Len a) = a
+    ann (Complement a) = a
 
     amap f (Neg a) = Neg (f a)
     amap f (Not a) = Not (f a)
     amap f (Len a) = Len (f a)
+    amap f (Complement a) = Complement (f a)
 
 instance Annotated PrefixExp where
     ann (PEVar a _) = a

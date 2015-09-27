@@ -10,8 +10,8 @@ import           Language.Lua
 
 main :: IO ()
 main = defaultMain
-  [ env (loadFiles "lua-5.2.2-tests") $ \files ->
-      bench "Parsing Lua files from 5.2.2 test suite" $
+  [ env (loadFiles "lua-5.3.1-tests") $ \files ->
+      bench "Parsing Lua files from 5.3.1 test suite" $
         nf (catMaybes . map (either (const Nothing) Just) . map (parseText chunk)) files
   ]
 

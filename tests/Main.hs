@@ -34,9 +34,9 @@ tests :: TestTree
 tests = testGroup "Tests" [unitTests, propertyTests]
 
 unitTests :: TestTree
-unitTests = testGroup "Unit tests" [stringTests, numberTests, regressions, lua522Tests]
+unitTests = testGroup "Unit tests" [stringTests, numberTests, regressions, lua531Tests]
   where
-    lua522Tests = parseFilesTest "Parsing Lua files from Lua 5.2.2 test suite" "lua-5.2.2-tests"
+    lua531Tests = parseFilesTest "Parsing Lua files from Lua 5.3.1 test suite" "lua-5.3.1-tests"
 
 propertyTests :: TestTree
 propertyTests = testGroup "Property tests" [{-genPrintParse-}]
@@ -47,7 +47,7 @@ parseExps file contents = P.runParser (many A.exp) () file (L.llex contents)
 stringTests :: TestTree
 stringTests = testGroup "String tests"
     [ testCase
-        "Equal strings from 5.2.2 reference manual"
+        "Equal strings from 5.3.1 reference manual"
         (do let file = "tests/strings"
             contents <- readFile file
             case parseExps file contents of
@@ -67,7 +67,7 @@ stringTests = testGroup "String tests"
 numberTests :: TestTree
 numberTests = testGroup "Number tests"
     [ testCase
-        "Numbers from 5.2.2 reference manual"
+        "Numbers from 5.3.1 reference manual"
         (do let file = "tests/numbers"
             contents <- readFile file
             case parseExps file contents of

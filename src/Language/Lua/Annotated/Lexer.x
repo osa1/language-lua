@@ -12,6 +12,7 @@ import Language.Lua.Token
 import Control.Applicative ((<$>))
 import Control.Monad (forM_, unless, when)
 import Data.Char (isNumber)
+import Data.List (foldl')
 import Safe (readMay)
 
 }
@@ -31,8 +32,8 @@ $sqstr    = \0-\255 # [ \' \n \\ ]       -- valid character in a string literal 
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfa\\\?'"] | $digit{1,3} | x$hexdigit{2} | \n | z [$space \n]*)
-@charescs  = \\ ([ntvbrfa\\\?"'] | $digit{1,3} | x$hexdigit{2} | \n | z [$space \n]*)
+@charescd  = \\ ([ntvbrfa\\\?'"] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n]*)
+@charescs  = \\ ([ntvbrfa\\\?"'] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n]*)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -97,6 +98,12 @@ tokens :-
     <0> "."   { tok LTokDot }
     <0> ".."  { tok LTokDDot }
     <0> "..." { tok LTokEllipsis }
+    <0> "&"   { tok LTokAmpersand }
+    <0> "|"   { tok LTokPipe }
+    <0> "~"   { tok LTokTilde }
+    <0> "<<"  { tok LTokDLT }
+    <0> ">>"  { tok LTokDGT }
+    <0> "//"  { tok LTokDGT }
 
 {
 
@@ -235,6 +242,13 @@ replaceCharCodes :: String -> String
 replaceCharCodes s =
   case s of
     ('\\' : 'x' : h1 : h2 : rest) -> toEnum (hexToInt h1 * 16 + hexToInt h2) : replaceCharCodes rest
+    ('\\' : 'u' : '{' : rest) ->
+        case break (=='}') rest of
+          (ds,_:rest')
+             | code <= 0x10ffff -> toEnum code : replaceCharCodes rest'
+             | otherwise        -> '\xFFFD' : replaceCharCodes rest'
+             where code = foldl' (\acc d -> acc * 16 + hexToInt d) 0 ds
+          _ -> error "lexical error: unterminated unicode escape"
     ('\\' : c1 : c2 : c3 : rest)
       | isNumber c1 && isNumber c2 && isNumber c3 ->
           toEnum (decToNum c1 * 100 + decToNum c2 * 10 + decToNum c3) : replaceCharCodes rest
@@ -372,9 +386,15 @@ scanner str = runAlex str loop
             else do toks <- loop
                     return (t:toks)
 
+-- | Drop the first line of a Lua file when it starts with a '#'
+dropSpecialComment :: String -> String
+dropSpecialComment ('#':xs) = dropWhile (/='\n') xs
+dropSpecialComment xs = xs
+-- Newline is preserved in order to ensure that line numbers stay correct
+
 -- | Lua lexer.
 llex :: String -> [LTok]
-llex s = case scanner s of
+llex s = case scanner (dropSpecialComment s) of
            Left err -> error err
            Right r  -> r
 

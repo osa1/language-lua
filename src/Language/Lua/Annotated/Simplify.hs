@@ -87,11 +87,17 @@ sBinop A.EQ{} = EQ
 sBinop A.NEQ{} = NEQ
 sBinop A.And{} = And
 sBinop A.Or{} = Or
+sBinop A.BAnd{} = BAnd
+sBinop A.BOr{} = BOr
+sBinop A.BXor{} = BXor
+sBinop A.ShiftL{} = ShiftL
+sBinop A.ShiftR{} = ShiftR
 
 sUnop :: A.Unop a -> Unop
 sUnop A.Neg{} = Neg
 sUnop A.Not{} = Not
 sUnop A.Len{} = Len
+sUnop A.Complement{} = Complement
 
 sFunArg :: A.FunArg a -> FunArg
 sFunArg (A.Args _ es) = Args (map sExp es)
