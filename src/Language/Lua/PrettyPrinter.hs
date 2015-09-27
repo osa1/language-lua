@@ -236,7 +236,7 @@ instance LPretty Stat where
       where exps' = case exps of
                       Nothing -> empty
                       Just es -> equals </> intercalate comma (map pprint es)
-    pprint EmptyStat = empty
+    pprint EmptyStat = text ";"
 
 -- | Convert a string literal body to string literal syntax
 showStringLiteral :: String -> String
