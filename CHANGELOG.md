@@ -1,5 +1,9 @@
 ## Changelog
 
+#### 0.7.1
+
+- Integer division parsing fixed.
+
 #### 0.7.0
 
 - `language-lua` now supports Lua 5.3.
