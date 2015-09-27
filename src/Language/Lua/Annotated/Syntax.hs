@@ -50,7 +50,7 @@ data Var a
 
 data Binop a = Add a | Sub a | Mul a | Div a | Exp a | Mod a | Concat a
     | LT a | LTE a | GT a | GTE a | EQ a | NEQ a | And a | Or a
-    | ShiftL a | ShiftR a | BAnd a | BOr a | BXor a
+    | IDiv a | ShiftL a | ShiftR a | BAnd a | BOr a | BXor a
     deriving (Show, Eq, Functor, Data, Typeable, Generic)
 
 data Unop a = Neg a | Not a | Len a | Complement a
@@ -190,6 +190,7 @@ instance Annotated Binop where
     ann (BXor a) = a
     ann (ShiftL a) = a
     ann (ShiftR a) = a
+    ann (IDiv a) = a
 
     amap f (Add a) = Add (f a)
     amap f (Sub a) = Sub (f a)
@@ -211,6 +212,7 @@ instance Annotated Binop where
     amap f (BXor a) = BXor (f a)
     amap f (ShiftL a) = ShiftL (f a)
     amap f (ShiftR a) = ShiftR (f a)
+    amap f (IDiv a) = IDiv (f a)
 
 instance Annotated Unop where
     ann (Neg a) = a

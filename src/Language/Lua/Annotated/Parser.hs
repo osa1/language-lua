@@ -240,6 +240,7 @@ binop = do
     , tok LTokMinus >> return (Binop pos (Sub pos), 10, 10)
     , tok LTokStar >> return (Binop pos (Mul pos), 11, 11)
     , tok LTokSlash >> return (Binop pos (Div pos), 11, 11)
+    , tok LTokDSlash >> return (Binop pos (IDiv pos), 11, 11)
     , tok LTokExp >> return (Binop pos (Exp pos), 14, 13)
     , tok LTokPercent >> return (Binop pos (Mod pos), 11, 11)
     , tok LTokDDot >> return (Binop pos (Concat pos), 9, 8)

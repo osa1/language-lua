@@ -49,7 +49,7 @@ data Var
 
 data Binop = Add | Sub | Mul | Div | Exp | Mod | Concat
     | LT | LTE | GT | GTE | EQ | NEQ | And | Or
-    | ShiftL | ShiftR | BAnd | BOr | BXor
+    | IDiv | ShiftL | ShiftR | BAnd | BOr | BXor
     deriving (Show, Eq, Data, Typeable, Generic)
 
 data Unop = Neg | Not | Len | Complement
