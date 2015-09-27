@@ -29,6 +29,7 @@ Source-repository head
 
 Library
   Hs-source-dirs:    src
+  Default-language:  Haskell2010
 
   Exposed-modules:   Language.Lua
                      Language.Lua.Token
@@ -57,6 +58,7 @@ Library
 
 Test-Suite tests
   Type:              exitcode-stdio-1.0
+  Default-language:  Haskell2010
   Hs-source-dirs:    tests
   Main-is:           Main.hs
   Build-depends:     base >= 4.5 && < 4.9,
