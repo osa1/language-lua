@@ -11,9 +11,10 @@ module Language.Lua.Annotated.Lexer
 
 import Language.Lua.Token
 import Control.Monad (ap, liftM, forM_, when)
-import Data.Char (GeneralCategory(..),generalCategory,isAscii,isNumber,isSpace)
+import Data.Char (GeneralCategory(..),generalCategory,isAscii,isNumber,isSpace,chr)
 import Data.List (foldl')
 import Data.Word (Word8)
+import Data.Bits ((.&.),shiftR)
 
 }
 
@@ -197,7 +198,7 @@ testAndEndString (_,_,s) len = do
 mkString :: Bool -> String -> Int -> AlexPosn -> LTok
 mkString True s l posn =
     -- double quoted string, to make it Haskell readable
-    (LTokSLit (readString posn $ r (replaceCharCodes (take l s))), posn)
+    (LTokSLit (encodeString (readString posn (r (replaceCharCodes (take l s))))), posn)
   where
     -- we could handle \z while reading characters, at the cost of adding
     -- more state to the lexer. I wanted to go with simplest
@@ -214,7 +215,7 @@ mkString True s l posn =
     r [] = []
 mkString False s l posn =
     -- single quoted string, to make it Haskell readable
-    (LTokSLit (readString posn $ '"' : r (replaceCharCodes (take (l-2) $ drop 1 s)) ++ "\""), posn)
+    (LTokSLit (encodeString (readString posn ( '"' : r (replaceCharCodes (take (l-2) (drop 1 s))) ++ "\""))), posn)
   where
     -- handle \z
     r ('\\' : 'z' : rest) = r (skipWS rest)
@@ -238,7 +239,7 @@ replaceCharCodes s =
     ('\\' : 'u' : '{' : rest) ->
         case break (=='}') rest of
           (ds,_:rest')
-             | code <= 0x10ffff -> toEnum code : replaceCharCodes rest'
+             | code <= 0x10ffff -> chr code : replaceCharCodes rest'
              | otherwise        -> '\xFFFD' : replaceCharCodes rest'
              where code = foldl' (\acc d -> acc * 16 + hexToInt d) 0 ds
           _ -> error "lexical error: unterminated unicode escape"
@@ -517,5 +518,29 @@ instance Monad Alex where
   m >>= k  = Alex $ \s -> case unAlex m s of
                                 Left msg -> Left msg
                                 Right (s',a) -> unAlex (k a) s'
+
+encodeString :: String -> String
+encodeString = foldr encodeChar ""
+
+encodeChar :: Char -> String -> String
+encodeChar c rest
+   | oc <= 0x7f       = chr oc : rest
+
+   | oc <= 0x7ff      = chr (0xc0 + (oc `shiftR` 6))
+                      : chr (0x80 + oc .&. 0x3f)
+                      : rest
+
+   | oc <= 0xffff     = chr (0xe0 + (oc `shiftR` 12))
+                      : chr (0x80 + ((oc `shiftR` 6) .&. 0x3f))
+                      : chr (0x80 + oc .&. 0x3f)
+                      : rest
+
+   | otherwise        = chr (0xf0 + (oc `shiftR` 18))
+                      : chr (0x80 + ((oc `shiftR` 12) .&. 0x3f))
+                      : chr (0x80 + ((oc `shiftR` 6) .&. 0x3f))
+                      : chr (0x80 + oc .&. 0x3f)
+                      : rest
+  where
+    oc = ord c
 
 }

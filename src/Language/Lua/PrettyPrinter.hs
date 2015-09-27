@@ -15,6 +15,10 @@ import           Prelude                 hiding (EQ, GT, LT, (<$>))
 import           Prelude                 hiding (EQ, GT, LT)
 #endif
 
+import           Data.Char (ord, isPrint, isAscii)
+import           Data.List (foldl')
+import           Numeric (showHex)
+
 import           Text.PrettyPrint.Leijen hiding ((<$>))
 
 import           Language.Lua.Syntax
@@ -47,7 +51,7 @@ instance LPretty Exp where
     pprint' _ Nil            = text "nil"
     pprint' _ (Bool s)       = pprint s
     pprint' _ (Number n)     = text n
-    pprint' _ (String s)     = text (show s)
+    pprint' _ (String s)     = text (showStringLiteral s)
     pprint' _ Vararg         = text "..."
     pprint' _ (EFunDef f)    = pprint f
     pprint' _ (PrefixExp pe) = pprint pe
@@ -178,7 +182,7 @@ instance LPretty FunArg where
     pprint (Args [fun@EFunDef{}]) = parens (pprint fun)
     pprint (Args exps)   = parens (align (fillSep (punctuate comma (map (align . pprint) exps))))
     pprint (TableArg t)  = pprint t
-    pprint (StringArg s) = text (show s)
+    pprint (StringArg s) = text (showStringLiteral s)
 
 instance LPretty Stat where
     pprint (Assign names vals)
@@ -233,3 +237,39 @@ instance LPretty Stat where
                       Nothing -> empty
                       Just es -> equals </> intercalate comma (map pprint es)
     pprint EmptyStat = empty
+
+-- | Convert a string literal body to string literal syntax
+showStringLiteral :: String -> String
+showStringLiteral str = quote : aux str
+  where
+  useSingle = countQuotes str > 0 -- tie goes to double-quote
+  quote | useSingle = '\''
+        | otherwise = '\"'
+
+  aux xxs =
+    case xxs of
+      []      -> [quote]
+      '\a':xs -> '\\' : 'a' : aux xs
+      '\b':xs -> '\\' : 'b' : aux xs
+      '\f':xs -> '\\' : 'f' : aux xs
+      '\n':xs -> '\\' : 'n' : aux xs
+      '\r':xs -> '\\' : 'r' : aux xs
+      '\t':xs -> '\\' : 't' : aux xs
+      '\v':xs -> '\\' : 'v' : aux xs
+      '\\':xs -> '\\' : '\\' : aux xs
+      '\'':xs | useSingle -> '\\' : '\'' : aux xs
+      '\"':xs | not useSingle -> '\\' : '"' : aux xs
+      x   :xs
+        | isPrint x && isAscii x -> x : aux xs
+        | x <= '\x0f' -> '\\' : 'x' : '0' : showHex (ord x) (aux xs)
+        | x <= '\xff' -> '\\' : 'x'       : showHex (ord x) (aux xs)
+        | otherwise   -> error "Lua string literals support values between 0-0xff"
+
+-- Return a positive number when there are more double quotes in a string
+-- Return a negative number when there are more single quotes in a string
+countQuotes :: String -> Int
+countQuotes = foldl' aux 0
+  where
+  aux n '\'' = n-1
+  aux n '"'  = n+1
+  aux n _    = n
