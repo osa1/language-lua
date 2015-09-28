@@ -226,7 +226,7 @@ numberExp = Number <$> getPosition <*> number
 
 stringExp = String <$> getPosition <*> stringlit
 
-varargExp = (Vararg <$> getPosition) <* tok LTokEllipsis
+varargExp = Vararg <$> getPosition <* tok LTokEllipsis
 
 fundefExp = do
   pos <- getPosition

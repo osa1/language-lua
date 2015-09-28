@@ -59,7 +59,7 @@ data LToken = LTokPlus               -- ^+
             | LTokWhile              -- ^while
 
             | LTokNum       String   -- ^number constant
-            | LTokSLit      String   -- ^string constant
+            | LTokSLit      String  -- ^string constant. Includes quotes!
             | LTokIdent     String   -- ^identifier
             | LTokEof                -- ^end of file
     deriving Eq

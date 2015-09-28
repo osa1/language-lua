@@ -32,6 +32,7 @@ Library
 
   Exposed-modules:   Language.Lua
                      Language.Lua.Token
+                     Language.Lua.StringLiteral
                      Language.Lua.Syntax
                      Language.Lua.Parser
                      Language.Lua.PrettyPrinter

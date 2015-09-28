@@ -8,6 +8,7 @@ import qualified Language.Lua.Annotated.Lexer    as L
 import qualified Language.Lua.Annotated.Simplify as S
 import qualified Language.Lua.Parser             as P
 import           Language.Lua.PrettyPrinter      (pprint)
+import           Language.Lua.StringLiteral
 import           Language.Lua.Syntax
 import qualified Language.Lua.Token              as T
 
@@ -21,7 +22,6 @@ import           Test.Tasty.QuickCheck
 import           Control.Applicative
 import           Control.DeepSeq                 (deepseq, force)
 import           Control.Monad                   (forM_)
-import           Data.ByteString.Lazy            (ByteString)
 import           Data.Char                       (isSpace)
 import           GHC.Generics
 import           Prelude                         hiding (Ordering (..), exp)
@@ -60,32 +60,32 @@ literalDecodingTests :: TestTree
 literalDecodingTests = testGroup "Literal decoding tests"
   [ testCase "C escapes"
       (do assertEqual "C escapes wrong"
-              "\a\b\f\n\r\t\v\\\"'"
-            $ L.interpretStringLiteral "\\a\\b\\f\\n\\r\\t\\v\\\\\\\"'"
+              (Just "\a\b\f\n\r\t\v\\\"'")
+            $ interpretStringLiteral "\"\\a\\b\\f\\n\\r\\t\\v\\\\\\\"'\""
           assertEqual "C escapes wrong"
-              "\a \b \f \n \r \t \v \\ \" '"
-            $ L.interpretStringLiteral "\\a \\b \\f \\n \\r \\t \\v \\\\ \\\" '"
+              (Just "\a \b \f \n \r \t \v \\ \" '")
+            $ interpretStringLiteral "\"\\a \\b \\f \\n \\r \\t \\v \\\\ \\\" '\""
           assertEqual "ASCII characters wrong"
-              "the quick brown fox jumps over the lazy dog"
-            $ L.interpretStringLiteral "the quick brown fox jumps over the lazy dog"
+              (Just "the quick brown fox jumps over the lazy dog")
+            $ interpretStringLiteral "'the quick brown fox jumps over the lazy dog'"
           assertEqual "Test decimal escapes"
-              "\0\1\2\3\4\60\127\255"
-            $ L.interpretStringLiteral "\\0\\1\\2\\3\\4\\60\\127\\255"
+              (Just "\0\1\2\3\4\60\127\255")
+            $ interpretStringLiteral "'\\0\\1\\2\\3\\4\\60\\127\\255'"
           assertEqual "Test hexadecimal escapes"
-              "\0\1\2\3\4\127\255"
-            $ L.interpretStringLiteral "\\x00\\x01\\x02\\x03\\x04\\x7f\\xff"
+              (Just "\0\1\2\3\4\127\255")
+            $ interpretStringLiteral "\"\\x00\\x01\\x02\\x03\\x04\\x7f\\xff\""
           assertEqual "Test UTF-8 encoding"
-              "\230\177\137\229\173\151"
-            $ L.interpretStringLiteral "汉字"
+              (Just "\230\177\137\229\173\151")
+            $ interpretStringLiteral "'汉字'"
           assertEqual "Test unicode escape"
-              "\0 \16 \230\177\137\229\173\151"
-            $ L.interpretStringLiteral "\\u{0} \\u{10} \\u{6c49}\\u{5b57}"
+              (Just "\0 \16 \230\177\137\229\173\151")
+            $ interpretStringLiteral "'\\u{0} \\u{10} \\u{6c49}\\u{5b57}'"
           assertEqual "Test continued line"
-              "hello\nworld"
-            $ L.interpretStringLiteral "hello\\\nworld"
+              (Just "hello\nworld")
+            $ interpretStringLiteral "\"hello\\\nworld\""
           assertEqual "Test skipped whitespace"
-              "helloworld"
-            $ L.interpretStringLiteral "hello\\z  \n \f \t \r \v   world"
+              (Just "helloworld")
+            $ interpretStringLiteral "'hello\\z  \n \f \t \r \v   world'"
       )
   ]
 
@@ -101,20 +101,17 @@ stringTests = testGroup "String tests"
                 assertBool "Wrong number of strings parsed" (length exps == 5)
                 case asStrings exps of
                   Nothing -> assertFailure "Not all strings were strings"
-                  Just strs -> assertEqTrans $ map L.interpretStringLiteral strs)
+                  Just strs ->
+                    forM_ strs $ \str ->
+                        assertEqual "String not same"
+                                expected $ interpretStringLiteral str)
     ]
   where
+    expected = Just "alo\n123\""
     asString (String s) = Just s
     asString _          = Nothing
 
     asStrings = mapM (asString . S.sExp)
-
-    assertEqTrans :: [ByteString] -> Assertion
-    assertEqTrans [] = return ()
-    assertEqTrans [_] = return ()
-    assertEqTrans (a : b : rest) = do
-      assertEqual "Strings are not same" a b
-      assertEqTrans (b : rest)
 
 numberTests :: TestTree
 numberTests = testGroup "Number tests"
@@ -155,7 +152,7 @@ regressions = testGroup "Regression tests"
         show (L.llex "\"\\\'\"") `deepseq` return ()
     , testCase "Lexing Lua string: '\\\\\"'" $ do
         assertEqual "String lexed wrong"
-          (Right [T.LTokSLit "\\\\\"", T.LTokEof]) (fmap (map fst) $ L.llex "'\\\\\"'")
+          (Right [T.LTokSLit "'\\\\\"'", T.LTokEof]) (fmap (map fst) $ L.llex "'\\\\\"'")
     , testCase "Lexing long literal `[====[ ... ]====]`" $
         show (L.llex "[=[]]=]") `deepseq` return ()
     , testCase "Handling \\z" $
