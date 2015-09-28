@@ -7,6 +7,7 @@ module Language.Lua.Annotated.Lexer
   , llexFile
   , LTok
   , AlexPosn(..)
+  , interpretStringLiteral
   ) where
 
 import Language.Lua.Token
@@ -15,7 +16,10 @@ import Data.Char (GeneralCategory(..),generalCategory,isAscii,isNumber,isSpace,c
 import Data.List (foldl')
 import Data.Word (Word8)
 import Data.Bits ((.&.),shiftR)
+import Data.Monoid (mempty, mappend)
 import Control.Applicative (Applicative(..))
+import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Builder as B
 
 }
 
@@ -197,7 +201,7 @@ testAndEndString (_,_,s) len = do
 
 {-# INLINE mkString #-}
 mkString :: String -> Int -> AlexPosn -> LTok
-mkString s l posn = (LTokSLit (readString posn (take (l-2) (drop 1 s))), posn)
+mkString s l posn = (LTokSLit (take (l-2) (drop 1 s)), posn)
 
 skipWS :: String -> String
 skipWS (' '  : rest) = skipWS rest
@@ -230,53 +234,48 @@ decToNum :: Char -> Int
 decToNum c = fromEnum c - fromEnum '0'
 
 
-readString :: AlexPosn -> String -> String
-readString (AlexPn _ line col) s = aux s
+interpretStringLiteral :: String -> B.ByteString
+interpretStringLiteral = B.toLazyByteString . aux
   where
   aux xxs =
     case xxs of
-      [] -> []
-      '\\' : 'x' : h1 : h2 : rest -> chr (hexToInt h1 * 16 + hexToInt h2) : aux rest
+      [] -> mempty
+      '\\' : 'x' : h1 : h2 : rest ->
+        B.word8 (fromIntegral (hexToInt h1 * 16 + hexToInt h2)) `mappend` aux rest
 
       '\\' : 'u' : '{' : rest ->
         case break (=='}') rest of
           (ds,_:rest')
-             | code <= 0x10ffff -> encodeChar (chr code) (aux rest')
-             | otherwise        -> encodeChar '\xFFFD' (aux rest')
+             | code <= 0x10ffff -> encodeChar (chr code) `mappend` aux rest'
              where code = foldl' (\acc d -> acc * 16 + hexToInt d) 0 ds
-          _ -> failure -- would be a bug in the alex lexer
+          _ -> encodeChar '\xFFFD' `mappend` aux (dropWhile (/='}') rest)
 
       '\\' : c1 : c2 : c3 : rest
         | isNumber c1 && isNumber c2 && isNumber c3 ->
-            chr (decToNum c1 * 100 + decToNum c2 * 10 + decToNum c3) : aux rest
+            let code = decToNum c1 * 100 + decToNum c2 * 10 + decToNum c3
+            in B.word8 (fromIntegral code) `mappend` aux rest
 
       '\\' : c1 : c2 : rest
         | isNumber c1 && isNumber c2 ->
-            chr (decToNum c1 * 10 + decToNum c2) : aux rest
+            let code = decToNum c1 * 10 + decToNum c2
+            in B.word8 (fromIntegral code) `mappend` aux rest
 
       '\\' : c1 : rest
-        | isNumber c1 -> chr (decToNum c1) : aux rest
+        | isNumber c1 -> B.word8 (fromIntegral (decToNum c1)) `mappend` aux rest
 
-      '\\' : 'a' : rest -> '\a' : aux rest
-      '\\' : 'b' : rest -> '\b' : aux rest
-      '\\' : 'f' : rest -> '\f' : aux rest
-      '\\' : 'n' : rest -> '\n' : aux rest
-      '\\' : '\n' : rest -> '\n' : aux rest
-      '\\' : 'r' : rest -> '\r' : aux rest
-      '\\' : 't' : rest -> '\t' : aux rest
-      '\\' : 'v' : rest -> '\v' : aux rest
-      '\\' : '\\' : rest -> '\\' : aux rest
-      '\\' : '"' : rest -> '"' : aux rest
-      '\\' : '\'' : rest -> '\'' : aux rest
-      '\\' : 'z' : rest -> aux (skipWS rest)
-
-      '\\' : _ -> failure
-
-      c : rest -> encodeChar c (aux rest)
-
-  failure = error $ concat
-      [ "lexical error near line: ", show line,
-        " col: ", show col, ": Cannot read string " ++ show s ]
+      '\\' : 'a'  : rest -> B.char8 '\a' `mappend` aux rest
+      '\\' : 'b'  : rest -> B.char8 '\b' `mappend` aux rest
+      '\\' : 'f'  : rest -> B.char8 '\f' `mappend` aux rest
+      '\\' : 'n'  : rest -> B.char8 '\n' `mappend` aux rest
+      '\\' : '\n' : rest -> B.char8 '\n' `mappend` aux rest
+      '\\' : 'r'  : rest -> B.char8 '\r' `mappend` aux rest
+      '\\' : 't'  : rest -> B.char8 '\t' `mappend` aux rest
+      '\\' : 'v'  : rest -> B.char8 '\v' `mappend` aux rest
+      '\\' : '\\' : rest -> B.char8 '\\' `mappend` aux rest
+      '\\' : '"'  : rest -> B.char8 '"' `mappend` aux rest
+      '\\' : '\'' : rest -> B.char8 '\'' `mappend` aux rest
+      '\\' : 'z'  : rest -> aux (skipWS rest)
+      c : rest -> encodeChar c `mappend` aux rest
 
 -- | Lua token with position information.
 type LTok = (LToken, AlexPosn)
@@ -494,25 +493,23 @@ instance Monad Alex where
                                 Left msg -> Left msg
                                 Right (s',a) -> unAlex (k a) s'
 
-encodeChar :: Char -> String -> String
-encodeChar c rest
-   | oc <= 0x7f       = chr oc : rest
+encodeChar :: Char -> B.Builder
+encodeChar c
+   | oc <= 0x7f       = asByte oc
 
-   | oc <= 0x7ff      = chr (0xc0 + (oc `shiftR` 6))
-                      : chr (0x80 + oc .&. 0x3f)
-                      : rest
+   | oc <= 0x7ff      = asByte (0xc0 + (oc `shiftR` 6))
+              `mappend` asByte (0x80 + oc .&. 0x3f)
 
-   | oc <= 0xffff     = chr (0xe0 + (oc `shiftR` 12))
-                      : chr (0x80 + ((oc `shiftR` 6) .&. 0x3f))
-                      : chr (0x80 + oc .&. 0x3f)
-                      : rest
+   | oc <= 0xffff     = asByte (0xe0 + (oc `shiftR` 12))
+              `mappend` asByte (0x80 + ((oc `shiftR` 6) .&. 0x3f))
+              `mappend` asByte (0x80 + oc .&. 0x3f)
 
-   | otherwise        = chr (0xf0 + (oc `shiftR` 18))
-                      : chr (0x80 + ((oc `shiftR` 12) .&. 0x3f))
-                      : chr (0x80 + ((oc `shiftR` 6) .&. 0x3f))
-                      : chr (0x80 + oc .&. 0x3f)
-                      : rest
+   | otherwise        = asByte (0xf0 + (oc `shiftR` 18))
+              `mappend` asByte (0x80 + ((oc `shiftR` 12) .&. 0x3f))
+              `mappend` asByte (0x80 + ((oc `shiftR` 6) .&. 0x3f))
+              `mappend` asByte (0x80 + oc .&. 0x3f)
   where
+    asByte = B.word8 . fromIntegral
     oc = ord c
 
 }

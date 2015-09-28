@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, ScopedTypeVariables,
+             OverloadedStrings #-}
 
 module Main where
 
@@ -20,6 +21,7 @@ import           Test.Tasty.QuickCheck
 import           Control.Applicative
 import           Control.DeepSeq                 (deepseq, force)
 import           Control.Monad                   (forM_)
+import           Data.ByteString.Lazy            (ByteString)
 import           Data.Char                       (isSpace)
 import           GHC.Generics
 import           Prelude                         hiding (Ordering (..), exp)
@@ -34,7 +36,8 @@ tests :: TestTree
 tests = testGroup "Tests" [unitTests, propertyTests]
 
 unitTests :: TestTree
-unitTests = testGroup "Unit tests" [stringTests, numberTests, regressions, lua531Tests]
+unitTests = testGroup "Unit tests"
+  [stringTests, numberTests, regressions, lua531Tests, literalDecodingTests]
   where
     lua531Tests = parseFilesTest "Parsing Lua files from Lua 5.3.1 test suite" "lua-5.3.1-tests"
 
@@ -53,6 +56,39 @@ reportLexError msg (L.AlexPn _ line column) =
      P.setPosition (pos `P.setSourceLine` line `P.setSourceColumn` column)
      fail ("lexical error: " ++ msg)
 
+literalDecodingTests :: TestTree
+literalDecodingTests = testGroup "Literal decoding tests"
+  [ testCase "C escapes"
+      (do assertEqual "C escapes wrong"
+              "\a\b\f\n\r\t\v\\\"'"
+            $ L.interpretStringLiteral "\\a\\b\\f\\n\\r\\t\\v\\\\\\\"'"
+          assertEqual "C escapes wrong"
+              "\a \b \f \n \r \t \v \\ \" '"
+            $ L.interpretStringLiteral "\\a \\b \\f \\n \\r \\t \\v \\\\ \\\" '"
+          assertEqual "ASCII characters wrong"
+              "the quick brown fox jumps over the lazy dog"
+            $ L.interpretStringLiteral "the quick brown fox jumps over the lazy dog"
+          assertEqual "Test decimal escapes"
+              "\0\1\2\3\4\60\127\255"
+            $ L.interpretStringLiteral "\\0\\1\\2\\3\\4\\60\\127\\255"
+          assertEqual "Test hexadecimal escapes"
+              "\0\1\2\3\4\127\255"
+            $ L.interpretStringLiteral "\\x00\\x01\\x02\\x03\\x04\\x7f\\xff"
+          assertEqual "Test UTF-8 encoding"
+              "\230\177\137\229\173\151"
+            $ L.interpretStringLiteral "汉字"
+          assertEqual "Test unicode escape"
+              "\0 \16 \230\177\137\229\173\151"
+            $ L.interpretStringLiteral "\\u{0} \\u{10} \\u{6c49}\\u{5b57}"
+          assertEqual "Test continued line"
+              "hello\nworld"
+            $ L.interpretStringLiteral "hello\\\nworld"
+          assertEqual "Test skipped whitespace"
+              "helloworld"
+            $ L.interpretStringLiteral "hello\\z  \n \f \t \r \v   world"
+      )
+  ]
+
 stringTests :: TestTree
 stringTests = testGroup "String tests"
     [ testCase
@@ -63,10 +99,17 @@ stringTests = testGroup "String tests"
               Left parseErr -> assertFailure (show parseErr)
               Right exps -> do
                 assertBool "Wrong number of strings parsed" (length exps == 5)
-                assertEqTrans $ map S.sExp exps)
+                case asStrings exps of
+                  Nothing -> assertFailure "Not all strings were strings"
+                  Just strs -> assertEqTrans $ map L.interpretStringLiteral strs)
     ]
   where
-    assertEqTrans :: [Exp] -> Assertion
+    asString (String s) = Just s
+    asString _          = Nothing
+
+    asStrings = mapM (asString . S.sExp)
+
+    assertEqTrans :: [ByteString] -> Assertion
     assertEqTrans [] = return ()
     assertEqTrans [_] = return ()
     assertEqTrans (a : b : rest) = do
@@ -112,7 +155,7 @@ regressions = testGroup "Regression tests"
         show (L.llex "\"\\\'\"") `deepseq` return ()
     , testCase "Lexing Lua string: '\\\\\"'" $ do
         assertEqual "String lexed wrong"
-          (Right [T.LTokSLit "\\\"", T.LTokEof]) (fmap (map fst) $ L.llex "'\\\\\"'")
+          (Right [T.LTokSLit "\\\\\"", T.LTokEof]) (fmap (map fst) $ L.llex "'\\\\\"'")
     , testCase "Lexing long literal `[====[ ... ]====]`" $
         show (L.llex "[=[]]=]") `deepseq` return ()
     , testCase "Handling \\z" $
