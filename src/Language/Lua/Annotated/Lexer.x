@@ -61,7 +61,7 @@ tokens :-
     <0> \'($sqstr|@charescs)*\' { \(posn,_,s) l -> return $ mkString s l posn }
 
     -- long strings
-    <0> \[ \=* \[ \n?        { enterString `andBegin` state_string }
+    <0> \[ \=* \[            { enterString `andBegin` state_string }
     <state_string> \] \=* \] { testAndEndString }
     <state_string> $longstr  { addCharToString }
 
