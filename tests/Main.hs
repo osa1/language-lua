@@ -123,6 +123,18 @@ stringTests = testGroup "String tests"
                     forM_ strs $ \str ->
                         assertEqual "String not same"
                                 expected $ interpretStringLiteral str)
+    , testCase
+        "Round-trip through the pretty-printer"
+       (do let file = "tests/string-literal-roundtrip.lua"
+           contents <- readFile file
+           case P.parseText P.chunk contents of
+             Left parseErr -> assertFailure (show parseErr)
+             Right x -> assertEqual
+                          "pretty printer didn't preserve"
+                          contents
+                          (show (pprint x) ++ "\n"))
+                        -- text file lines always end in a newline
+                        -- but the pretty printer doesn't know this
     ]
   where
     expected = Just "alo\n123\""
