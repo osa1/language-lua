@@ -86,6 +86,24 @@ literalDecodingTests = testGroup "Literal decoding tests"
           assertEqual "Test skipped whitespace"
               (Just "helloworld")
             $ interpretStringLiteral "'hello\\z  \n \f \t \r \v   world'"
+          assertEqual "Long-quote leading newline"
+              (Just "line1\nline2\n")
+            $ interpretStringLiteral "[===[\nline1\nline2\n]===]"
+          assertEqual "Long-quote without leading newline"
+              (Just "line1\nline2\n")
+            $ interpretStringLiteral "[===[line1\nline2\n]===]"
+          assertEqual "Long-quote no escapes"
+              (Just "\\0\\x00\\u{000}")
+            $ interpretStringLiteral "[===[\\0\\x00\\u{000}]===]"
+          assertEqual "Empty single quoted"
+              (Just "")
+            $ interpretStringLiteral "''"
+          assertEqual "Empty double quoted"
+              (Just "")
+            $ interpretStringLiteral "\"\""
+          assertEqual "Empty long quoted"
+              (Just "")
+            $ interpretStringLiteral "[[]]"
       )
   ]
 
