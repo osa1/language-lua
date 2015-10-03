@@ -2,6 +2,8 @@
 
 #### 0.8.0
 
+- A bug that caused wrong long comment parsing is fixed(#29).
+
 - We can now parse Unicode strings from UTF-8 encoded files. By default these
   literals are not interpreted, and we have
   `StringLiteral.interpretStringLiteral` for interpretation and
