@@ -233,9 +233,14 @@ regressions = testGroup "Regression tests"
     , testCase "explist parsers shouldn't accept empty list of expressions in global declarations" $
         assertParseFailure (P.parseText P.stat "x =")
     , testCase "empty list of return values should be accpeted" $
-        assertEqual "Parsed wrong" (Right $ Block [] (Just [])) (P.parseText P.chunk "return")
+        assertEqual "Parsed wrong" (Right emptyChunk) (P.parseText P.chunk "return")
+    , testCase "Long comments should start immediately after --" $ do
+        assertEqual "Parsed wrong" (Right emptyChunk) (P.parseText P.chunk "--[[ line1\nline2 ]]")
+        assertParseFailure (P.parseText P.chunk "-- [[ line1\nline2 ]]")
     ]
   where
+    emptyChunk = Block [] (Just [])
+
     pp :: String -> Assertion
     pp expr =
       case P.parseText P.exp expr of
