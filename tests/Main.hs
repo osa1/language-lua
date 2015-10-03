@@ -307,7 +307,7 @@ instance Arbitrary Stat where
     , LocalFunAssign <$> arbitrary <*> arbitrary
     , LocalAssign <$> listOf1 arbitrary <*> arbitrary
     -- Don't generate EmptyState - it's not printed by pretty-printer
-    -- , return $ EmptyStat ()
+    , return EmptyStat
     ]
   shrink = recursivelyShrink
 
