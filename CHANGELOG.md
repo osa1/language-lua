@@ -1,5 +1,31 @@
 ## Changelog
 
+#### 0.8.0
+
+- We can now parse Unicode strings from UTF-8 encoded files. By default these
+  literals are not interpreted, and we have
+  `StringLiteral.interpretStringLiteral` for interpretation and
+  `StringLiteral.constructStringLiteral` for constructing Lua string literals
+  from UTF-8 encoded ByteStrings.
+
+  Main invariant is that if you print a parsed Lua string, it should be printed
+  the same way. (including long strings)
+
+- Empty statements(`EmptyStat`) are now printed by pretty printer to avoid
+  ambiguous printing. Previously these two statements were printed the same:
+
+  ```lua
+  f();(f)()
+  f()(f)()
+  ```
+
+  But the first line does not have the parse ambiguity(3 function applications
+  in one statement or two function application statements).
+
+- Forgotten `Annotated` instance for `Name` implemented.
+
+- Some warnings are fixed for GHC < 7.10.
+
 #### 0.7.1
 
 - Integer division parsing fixed.

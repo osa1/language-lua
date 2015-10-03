@@ -3,14 +3,14 @@ Name:                language-lua
 Description:
     Lua 5.3 lexer, parser and pretty-printer.
 
-Version:             0.7.1
+Version:             0.8.0
 Synopsis:            Lua parser and pretty-printer
 Homepage:            http://github.com/osa1/language-lua
 Bug-reports:         http://github.com/osa1/language-lua/issues
 License:             BSD3
 License-file:        LICENSE
 Author:              Ömer Sinan Ağacan
-Maintainer:          omeragacan@gmail.com
+Maintainer:          Ömer Sinan Ağacan <omeragacan@gmail.com>, Eric Mertens <emertens@gmail.com>
 Category:            Language
 Build-type:          Simple
 Stability:           Experimental
