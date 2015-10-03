@@ -19,6 +19,7 @@ Cabal-version:       >= 1.10
 Extra-source-files:  src/Text/PrettyPrint/LICENSE
                      tests/numbers
                      tests/strings
+                     tests/string-literal-roundtrip.lua
                      lua-5.3.1-tests/*.lua
                      README.md
                      CHANGELOG.md
