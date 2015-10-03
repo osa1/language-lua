@@ -65,10 +65,10 @@ tokens :-
     <state_string> \] \=* \] { testAndEndString }
     <state_string> $longstr  { addCharToString }
 
+    <0> "--[" \=* \[              { enterLongComment `andBegin` state_string }
     <0> "--"                      { enterComment `andBegin` state_comment }
     <state_comment> . # \n        ;
     <state_comment> \n            { testAndEndComment }
-    <state_comment> \[ \=* \[ \n? { enterString `andBegin` state_string }
 
     <0> "+"   { tok LTokPlus }
     <0> "-"   { tok LTokMinus }
@@ -149,9 +149,15 @@ addCharToStringValue c = Alex $ \s -> Right (s{alex_ust=(alex_ust s){stringValue
 putInputBack :: String -> Alex ()
 putInputBack str = Alex $ \s -> Right (s{alex_inp=str ++ alex_inp s}, ())
 
+enterLongComment :: AlexAction LTok
+enterLongComment (posn,_,s) len = do
+  initComment
+  initString (len-2) posn
+  alexMonadScan'
+
 enterString :: AlexAction LTok
 enterString (posn,_,s) len = do
-  initString (if (s !! (len-1) == '\n') then len-1 else len) posn
+  initString len posn
   alexMonadScan'
 
 enterComment :: AlexAction LTok
