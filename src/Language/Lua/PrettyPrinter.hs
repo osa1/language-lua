@@ -47,7 +47,7 @@ instance LPretty Exp where
     pprint' _ Nil            = text "nil"
     pprint' _ (Bool s)       = pprint s
     pprint' _ (Number n)     = text n
-    pprint' _ (String s)     = text (show s)
+    pprint' _ (String s)     = text s
     pprint' _ Vararg         = text "..."
     pprint' _ (EFunDef f)    = pprint f
     pprint' _ (PrefixExp pe) = pprint pe
@@ -178,7 +178,7 @@ instance LPretty FunArg where
     pprint (Args [fun@EFunDef{}]) = parens (pprint fun)
     pprint (Args exps)   = parens (align (fillSep (punctuate comma (map (align . pprint) exps))))
     pprint (TableArg t)  = pprint t
-    pprint (StringArg s) = text (show s)
+    pprint (StringArg s) = text s
 
 instance LPretty Stat where
     pprint (Assign names vals)
@@ -232,4 +232,4 @@ instance LPretty Stat where
       where exps' = case exps of
                       Nothing -> empty
                       Just es -> equals </> intercalate comma (map pprint es)
-    pprint EmptyStat = empty
+    pprint EmptyStat = text ";"

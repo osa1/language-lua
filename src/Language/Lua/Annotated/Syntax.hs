@@ -279,6 +279,10 @@ instance Annotated FunArg where
     amap f (TableArg a x1) = TableArg (f a) x1
     amap f (StringArg a x1) = StringArg (f a) x1
 
+instance Annotated Name where
+    ann (Name a _) = a
+    amap f (Name a x1) = Name (f a) x1
+
 instance NFData a => NFData (Name a)
 instance NFData a => NFData (Stat a)
 instance NFData a => NFData (Exp a)

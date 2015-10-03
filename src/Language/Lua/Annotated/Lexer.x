@@ -1,4 +1,5 @@
 {
+
 {-# OPTIONS_GHC -w #-}
 
 module Language.Lua.Annotated.Lexer
@@ -8,16 +9,14 @@ module Language.Lua.Annotated.Lexer
   , AlexPosn(..)
   ) where
 
-import Language.Lua.Token
-import Control.Applicative ((<$>))
-import Control.Monad (forM_, unless, when)
-import Data.Char (isNumber)
-import Data.List (foldl')
-import Safe (readMay)
+import           Control.Applicative (Applicative(..))
+import           Control.Monad (ap, liftM, forM_, when)
+import           Data.Char (GeneralCategory(..),generalCategory,isAscii,isSpace)
+import           Data.Word (Word8)
+
+import           Language.Lua.Token
 
 }
-
-%wrapper "monadUserState"
 
 $space = [ \ \t ]                        -- horizontal white space
 
@@ -32,8 +31,8 @@ $sqstr    = \0-\255 # [ \' \n \\ ]       -- valid character in a string literal 
 $longstr  = \0-\255                      -- valid character in a long string
 
 -- escape characters
-@charescd  = \\ ([ntvbrfa\\\?'"] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n]*)
-@charescs  = \\ ([ntvbrfa\\\?"'] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n]*)
+@charescd  = \\ ([ntvbrfa\\'"] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n\r\f\v]*)
+@charescs  = \\ ([ntvbrfa\\"'] | $digit{1,3} | x$hexdigit{2} | u\{$hexdigit{1,}\} | \n | z [$space \n\r\f\v]*)
 
 @digits    = $digit+
 @hexdigits = $hexdigit+
@@ -58,11 +57,11 @@ tokens :-
     <0> @hexprefix @hexdigits @expparthex    { tokWValue LTokNum }
     <0> @hexprefix @mantparthex @expparthex? { tokWValue LTokNum }
 
-    <0> \"($dqstr|@charescd)*\" { \(posn,_,_,s) l -> return $ mkString True  s l posn }
-    <0> \'($sqstr|@charescs)*\' { \(posn,_,_,s) l -> return $ mkString False s l posn }
+    <0> \"($dqstr|@charescd)*\" { \(posn,_,s) l -> return $ mkString s l posn }
+    <0> \'($sqstr|@charescs)*\' { \(posn,_,s) l -> return $ mkString s l posn }
 
     -- long strings
-    <0> \[ \=* \[ \n?        { enterString `andBegin` state_string }
+    <0> \[ \=* \[            { enterString `andBegin` state_string }
     <state_string> \] \=* \] { testAndEndString }
     <state_string> $longstr  { addCharToString }
 
@@ -151,7 +150,7 @@ putInputBack :: String -> Alex ()
 putInputBack str = Alex $ \s -> Right (s{alex_inp=str ++ alex_inp s}, ())
 
 enterString :: AlexAction LTok
-enterString (posn,_,_,s) len = do
+enterString (posn,_,s) len = do
   initString (if (s !! (len-1) == '\n') then len-1 else len) posn
   alexMonadScan'
 
@@ -160,13 +159,8 @@ enterComment _ _ = do
   initComment
   alexMonadScan'
 
-addString :: AlexAction LTok
-addString (_,_,_,s) len = do
-  forM_ (take len s) addCharToStringValue
-  alexMonadScan'
-
 addCharToString :: AlexAction LTok
-addCharToString (_,_,_,s) len = do
+addCharToString (_,_,s) len = do
   addCharToStringValue (head s)
   alexMonadScan'
 
@@ -182,7 +176,7 @@ testAndEndComment _ _ = do
   if ss then alexMonadScan' else endComment >> alexSetStartCode 0 >> alexMonadScan'
 
 testAndEndString :: AlexAction LTok
-testAndEndString (_,_,_,s) len = do
+testAndEndString (_,_,s) len = do
   startlen <- getStringDelimLen
   if startlen /= len
     then do addCharToStringValue (head s)
@@ -198,128 +192,28 @@ testAndEndString (_,_,_,s) len = do
               else do
                 val  <- getStringValue
                 posn <- getStringPosn
-                return (LTokSLit (reverse val), posn)
+                let eqs = replicate (startlen-2) '=' -- 2 were the [s
+                return (LTokSLit ("["++eqs++"["++reverse val++"]"++eqs++"]"), posn)
 
 {-# INLINE mkString #-}
-mkString :: Bool -> String -> Int -> AlexPosn -> LTok
-mkString True s l posn =
-    -- double quoted string, to make it Haskell readable
-    (LTokSLit (readString posn $ r (replaceCharCodes (take l s))), posn)
-  where
-    -- we could handle \z while reading characters, at the cost of adding
-    -- more state to the lexer. I wanted to go with simplest
-    -- implementation.
-    r ('\\' : 'z' : rest) = r (skipWS rest)
-    -- handle newline escaping
-    r ('\\' : '\n' : rest) = '\n' : r rest
-    -- skip escaped backslash
-    r ('\\' : '\\' : rest) = '\\' : '\\' : r rest
-    -- quote already escaped, Lua allows this. (ie. "\'")
-    r ('\\' : '\'' : rest) = '\'' : r rest
-
-    r (c : rest) = c : r rest
-    r [] = []
-mkString False s l posn =
-    -- single quoted string, to make it Haskell readable
-    (LTokSLit (readString posn $ '"' : r (replaceCharCodes (take (l-2) $ drop 1 s)) ++ "\""), posn)
-  where
-    -- handle \z
-    r ('\\' : 'z' : rest) = r (skipWS rest)
-    -- handle newline escaping
-    r ('\\' : '\n' : rest) = '\n' : r rest
-    -- skip escaped backslash
-    r ('\\' : '\\' : rest) = '\\' : '\\' : r rest
-    -- escaped single quote, remove the escaping
-    r ('\\' : '\'' : rest) = '\'' : r rest
-    -- double quote already escaped, Lua allows this. (ie. '\"')
-    r ('\\' : '"' : rest) = '\\' : '"' : r rest
-    -- unescaped double quote, escape it
-    r ('"' : rest) = '\\' : '"' : r rest
-    r (c : rest) = c : r rest
-    r [] = []
-
-replaceCharCodes :: String -> String
-replaceCharCodes s =
-  case s of
-    ('\\' : 'x' : h1 : h2 : rest) -> toEnum (hexToInt h1 * 16 + hexToInt h2) : replaceCharCodes rest
-    ('\\' : 'u' : '{' : rest) ->
-        case break (=='}') rest of
-          (ds,_:rest')
-             | code <= 0x10ffff -> toEnum code : replaceCharCodes rest'
-             | otherwise        -> '\xFFFD' : replaceCharCodes rest'
-             where code = foldl' (\acc d -> acc * 16 + hexToInt d) 0 ds
-          _ -> error "lexical error: unterminated unicode escape"
-    ('\\' : c1 : c2 : c3 : rest)
-      | isNumber c1 && isNumber c2 && isNumber c3 ->
-          toEnum (decToNum c1 * 100 + decToNum c2 * 10 + decToNum c3) : replaceCharCodes rest
-      | isNumber c1 && isNumber c2 ->
-          toEnum (decToNum c1 * 10 + decToNum c2) : replaceCharCodes (c3 : rest)
-      | isNumber c1 ->
-          toEnum (decToNum c1) : replaceCharCodes (c2 : c3 : rest)
-      | otherwise ->
-          '\\' : c1 : replaceCharCodes (c2 : c3 : rest)
-    ['\\', c1, c2]
-      | isNumber c1 && isNumber c2 ->
-          [toEnum (decToNum c1 * 10 + decToNum c2)]
-      | isNumber c1 ->
-          toEnum (decToNum c1) : replaceCharCodes [c2]
-      | otherwise -> s
-    ['\\', c1]
-      | isNumber c1 -> [toEnum (decToNum c1)]
-      | otherwise -> s
-    (c : rest) -> c : replaceCharCodes rest
-    [] -> []
-
-skipWS :: String -> String
-skipWS (' '  : rest) = skipWS rest
-skipWS ('\n' : rest) = skipWS rest
-skipWS ('\t' : rest) = skipWS rest
-skipWS str           = str
-
-hexToInt :: Char -> Int
-hexToInt c =
-  case c of
-    'A' -> 10
-    'a' -> 10
-    'B' -> 11
-    'b' -> 11
-    'C' -> 12
-    'c' -> 12
-    'D' -> 13
-    'd' -> 13
-    'E' -> 14
-    'e' -> 14
-    'F' -> 15
-    'f' -> 15
-    _   -> decToNum c
-
-{-# INLINE decToNum #-}
-decToNum :: Char -> Int
-decToNum c = fromEnum c - fromEnum '0'
-
-
-readString :: AlexPosn -> String -> String
-readString (AlexPn _ line col) s =
-  case readMay s of
-    Nothing -> error $ concat
-      [ "lexical error near line: ", show line, " col: ", show col, ": Cannot read string " ++ show s ]
-    Just s' -> s'
+mkString :: String -> Int -> AlexPosn -> LTok
+mkString s l posn = (LTokSLit (take l s), posn)
 
 -- | Lua token with position information.
 type LTok = (LToken, AlexPosn)
 
--- type AlexAction result = AlexInput -> Int -> Alex result
+type AlexAction result = AlexInput -> Int -> Alex result
 
 -- Helper to make LTokens with string value (like LTokNum, LTokSLit etc.)
 tokWValue :: (String -> LToken) -> AlexInput -> Int -> Alex LTok
-tokWValue tok (posn,_,_,s) len = return (tok (take len s), posn)
+tokWValue tok (posn,_,s) len = return (tok (take len s), posn)
 
 tok :: LToken -> AlexInput -> Int -> Alex LTok
-tok t (posn,_,_,_) _ = return (t, posn)
+tok t (posn,_,_) _ = return (t, posn)
 
 {-# INLINE ident #-}
 ident :: AlexAction LTok
-ident (posn,_,_,s) len = return (tok, posn)
+ident (posn,_,s) len = return (tok, posn)
   where tok = case (take len s) of
           "and"      -> LTokAnd
           "break"    -> LTokBreak
@@ -345,15 +239,6 @@ ident (posn,_,_,s) len = return (tok, posn)
           "while"    -> LTokWhile
           ident'     -> LTokIdent ident'
 
---data AlexPosn = AlexPn !Int  -- absolute character offset
---                       !Int  -- line number
---                       !Int  -- column number
---
---type AlexInput = (AlexPosn,     -- current position,
---                  Char,         -- previous char
---                  [Byte],       -- rest of the bytes for the current char
---                  String)       -- current input string
-
 alexEOF :: Alex LTok
 alexEOF = return (LTokEof, AlexPn (-1) (-1) (-1))
 
@@ -365,16 +250,15 @@ alexMonadScan' = do
     AlexEOF -> do cs <- getCommentState
                   when cs endString
                   alexEOF
-    AlexError ((AlexPn _ line col),ch,_,_) -> alexError $ concat
-        [ "lexical error near line: " , show line , " col: " , show col , " at char " , [ch] ]
+    AlexError ((AlexPn _ line col),ch,_) -> alexError ("at char " ++ [ch])
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'
     AlexToken inp' len action -> do
         alexSetInput inp'
-        action (ignorePendingBytes inp) len
+        action inp len
 
-scanner :: String -> Either String [LTok]
+scanner :: String -> Either (String,AlexPosn) [LTok]
 scanner str = runAlex str loop
   where loop = do
           t@(tok, _) <- alexMonadScan'
@@ -393,12 +277,142 @@ dropSpecialComment xs = xs
 -- Newline is preserved in order to ensure that line numbers stay correct
 
 -- | Lua lexer.
-llex :: String -> [LTok]
-llex s = case scanner (dropSpecialComment s) of
-           Left err -> error err
-           Right r  -> r
+llex :: String -> Either (String,AlexPosn) [LTok]
+llex = scanner . dropSpecialComment
 
 -- | Run Lua lexer on a file.
-llexFile :: FilePath -> IO [LTok]
-llexFile p = llex <$> readFile p
+llexFile :: FilePath -> IO (Either (String,AlexPosn) [LTok])
+llexFile = fmap llex . readFile
+
+------------------------------------------------------------------------
+-- Custom Alex wrapper
+------------------------------------------------------------------------
+
+data AlexPosn = AlexPn !Int  -- absolute character offset
+                       !Int  -- line number
+                       !Int  -- column number
+  deriving (Show,Eq)
+
+type AlexInput = (AlexPosn,     -- current position,
+                  Char,         -- previous char
+                  String)       -- current input string
+
+alexStartPos :: AlexPosn
+alexStartPos = AlexPn 0 1 1
+
+alexGetByte :: AlexInput -> Maybe (Word8,AlexInput)
+alexGetByte (_,_,[]) = Nothing
+alexGetByte (p,_,c:cs) = Just (byteForChar c,(p',c,cs))
+  where p' = alexMove p c
+
+alexMove :: AlexPosn -> Char -> AlexPosn
+alexMove (AlexPn ix line column) c =
+  case c of
+    '\t' -> AlexPn (ix + 1) line (((column + 7) `div` 8) * 8 + 1)
+    '\n' -> AlexPn (ix + 1) (line + 1) 1
+    _    -> AlexPn (ix + 1) line (column + 1)
+
+------------------------------------------------------------------------
+-- Embed all of unicode, kind of, in a single byte!
+------------------------------------------------------------------------
+
+byteForChar :: Char -> Word8
+byteForChar c
+  | c <= '\6' = non_graphic
+  | isAscii c = fromIntegral (ord c)
+  | otherwise = case generalCategory c of
+                  LowercaseLetter       -> lower
+                  OtherLetter           -> lower
+                  UppercaseLetter       -> upper
+                  TitlecaseLetter       -> upper
+                  DecimalNumber         -> digit
+                  OtherNumber           -> digit
+                  ConnectorPunctuation  -> symbol
+                  DashPunctuation       -> symbol
+                  OtherPunctuation      -> symbol
+                  MathSymbol            -> symbol
+                  CurrencySymbol        -> symbol
+                  ModifierSymbol        -> symbol
+                  OtherSymbol           -> symbol
+                  Space                 -> space
+                  ModifierLetter        -> other
+                  NonSpacingMark        -> other
+                  SpacingCombiningMark  -> other
+                  EnclosingMark         -> other
+                  LetterNumber          -> other
+                  OpenPunctuation       -> other
+                  ClosePunctuation      -> other
+                  InitialQuote          -> other
+                  FinalQuote            -> other
+                  _                     -> non_graphic
+  where
+  non_graphic     = 0
+  upper           = 1
+  lower           = 2
+  digit           = 3
+  symbol          = 4
+  space           = 5
+  other           = 6
+
+-- perform an action for this token, and set the start code to a new value
+andBegin :: AlexAction result -> Int -> AlexAction result
+(action `andBegin` code) input len = do alexSetStartCode code; action input len
+
+alexSetStartCode :: Int -> Alex ()
+alexSetStartCode sc = Alex $ \s -> Right (s{alex_scd=sc}, ())
+
+data AlexState = AlexState {
+        alex_pos :: !AlexPosn,  -- position at current input location
+        alex_inp :: String,     -- the current input
+        alex_chr :: !Char,      -- the character before the input
+        alex_scd :: !Int        -- the current startcode
+
+      , alex_ust :: AlexUserState -- AlexUserState will be defined in the user program
+
+    }
+
+-- Compile with -funbox-strict-fields for best results!
+
+runAlex :: String -> Alex a -> Either (String,AlexPosn) a
+runAlex input (Alex f)
+   = case f (AlexState {alex_pos = alexStartPos,
+                        alex_inp = input,
+                        alex_chr = '\n',
+
+                        alex_ust = alexInitUserState,
+
+                        alex_scd = 0}) of Left e -> Left e
+                                          Right ( _, a ) -> Right a
+
+newtype Alex a = Alex { unAlex :: AlexState -> Either (String,AlexPosn) (AlexState, a) }
+
+alexError :: String -> Alex a
+alexError message = Alex $ \s -> Left (message, alex_pos s)
+
+alexGetStartCode :: Alex Int
+alexGetStartCode = Alex $ \s@AlexState{alex_scd=sc} -> Right (s, sc)
+
+alexSetInput :: AlexInput -> Alex ()
+alexSetInput (pos,c,inp)
+ = Alex $ \s -> case s{alex_pos=pos,alex_chr=c,alex_inp=inp} of
+                  s@(AlexState{}) -> Right (s, ())
+
+alexGetInput :: Alex AlexInput
+alexGetInput
+ = Alex $ \s@AlexState{alex_pos=pos,alex_chr=c,alex_inp=inp} ->
+        Right (s, (pos,c,inp))
+
+instance Functor Alex where
+  fmap = liftM
+
+instance Applicative Alex where
+  pure a = Alex $ \s -> Right (s,a)
+  (<*>) = ap
+
+instance Monad Alex where
+  return = pure
+  m >>= k  = Alex $ \s -> case unAlex m s of
+                                Left msg -> Left msg
+                                Right (s',a) -> unAlex (k a) s'
+
 }
