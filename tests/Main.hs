@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, ScopedTypeVariables,
-             OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, OverloadedStrings,
+             ScopedTypeVariables #-}
 
 module Main where
 
@@ -237,17 +237,24 @@ regressions = testGroup "Regression tests"
     , testCase "Long comments should start immediately after --" $ do
         assertEqual "Parsed wrong" (Right emptyChunk) (P.parseText P.chunk "--[[ line1\nline2 ]]")
         assertParseFailure (P.parseText P.chunk "-- [[ line1\nline2 ]]")
+    , testCase "Print EmptyStat for disambiguation" $ ppChunk "f();(f)()"
     ]
   where
     emptyChunk = Block [] (Just [])
 
     pp :: String -> Assertion
-    pp expr =
-      case P.parseText P.exp expr of
+    pp = ppTest (P.parseText P.exp) (show . pprint)
+
+    ppChunk :: String -> Assertion
+    ppChunk = ppTest (P.parseText P.chunk) (show . pprint)
+
+    ppTest :: Show err => (String -> Either err ret) -> (ret -> String) -> String -> Assertion
+    ppTest parser printer str =
+      case parser str of
         Left err -> assertFailure $ "Parsing failed: " ++ show err
         Right expr' ->
           assertEqual "Printed string is not equal to original one modulo whitespace"
-            (filter (not . isSpace) expr) (filter (not . isSpace) (show $ pprint expr'))
+            (filter (not . isSpace) str) (filter (not . isSpace) (printer expr'))
 
     assertParseFailure (Left _parseError) = return ()
     assertParseFailure (Right ret) = assertFailure $ "Unexpected parse: " ++ show ret
