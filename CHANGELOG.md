@@ -1,5 +1,9 @@
 ## Changelog
 
+#### 0.8.1
+
+- Fix building with `alex-3.1.5`.
+
 #### 0.8.0
 
 - A bug that caused wrong long comment parsing is fixed(#29).

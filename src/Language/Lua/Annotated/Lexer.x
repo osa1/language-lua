@@ -11,7 +11,7 @@ module Language.Lua.Annotated.Lexer
 
 import           Control.Applicative (Applicative(..))
 import           Control.Monad (ap, liftM, forM_, when)
-import           Data.Char (GeneralCategory(..),generalCategory,isAscii,isSpace)
+import           Data.Char (GeneralCategory(..),generalCategory,isAscii,isSpace,ord)
 import           Data.Word (Word8)
 
 import           Language.Lua.Token
