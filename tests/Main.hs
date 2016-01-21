@@ -272,11 +272,15 @@ parseFilesTest msg root = testCase msg $ do
     ret <- P.parseFile luaFile
     case ret of
       Left err -> assertFailure ("Parser error in " ++ luaFile ++ ": " ++ show err)
-      Right st -> force st `seq` return ()
-        -- case P.parseText P.chunk (show (pprint st)) of
-        --   Left err -> assertFailure ("Parser error while parsing printed version of "
-        --                               ++ luaFile ++ ": " ++ show err)
-        --   Right _  -> return ()
+      Right st -> -- force st `seq` return ()
+        let printed = show (pprint st)
+         in case P.parseText P.chunk printed of
+              Left err ->
+                assertFailure ("Parser error while parsing printed version of "
+                               ++ luaFile ++ ": " ++ show err ++ "\nPrinted file:\n"
+                               ++ printed)
+              Right st' ->
+                force st' `seq` return ()
 
 genPrintParse :: TestTree
 genPrintParse =
