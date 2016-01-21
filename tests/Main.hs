@@ -239,6 +239,11 @@ regressions = testGroup "Regression tests"
           (P.parseText P.chunk "--[[ line1\nline2 ]]")
         assertParseFailure (P.parseText P.chunk "-- [[ line1\nline2 ]]")
     , testCase "Print EmptyStat for disambiguation" $ ppChunk "f();(f)()"
+    , testCase "printing negation chains" $
+        let exp = Unop Neg (Unop Neg (Unop Neg (Number "120")))
+         in assertEqual "Parsed and/or printed wrong"
+                        (Right exp)
+                        (P.parseText P.exp (show (pprint exp)))
     ]
   where
     pp :: String -> Assertion
