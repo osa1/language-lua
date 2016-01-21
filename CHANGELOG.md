@@ -1,5 +1,10 @@
 ## Changelog
 
+#### 0.8.2
+
+- A bug in the printer that caused misprinting chained negation operators is
+  fixed.
+
 #### 0.8.1
 
 - Fix building with `alex-3.1.5`.
