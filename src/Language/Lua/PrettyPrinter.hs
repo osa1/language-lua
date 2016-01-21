@@ -59,6 +59,19 @@ instance LPretty Exp where
       where
         (opPrecL, opPrecR) = getBinopPrec op
         ps = if min opPrecL opPrecR < p then parens else id
+
+    -- We handle this as a special case: When we have a chain of negations, we
+    -- should put a space between operators, otherwise we end up printing a
+    -- comment.
+    --
+    -- One another solution would be to always put a space after negation, but I
+    -- like to put negation just before the expression, without any spaces.
+    pprint' p (Unop Neg (Unop Neg e)) =
+        ps (pprint Neg <+> pprint' opPrec (Unop Neg e))
+      where
+        opPrec = getUnopPrec Neg
+        ps = if opPrec < p then parens else id
+
     pprint' p (Unop op e)    = ps (pprint op <> pprint' opPrec e)
       where
         opPrec = getUnopPrec op
