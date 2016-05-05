@@ -15,17 +15,12 @@ import           Prelude                 hiding (EQ, GT, LT, (<$>))
 import           Prelude                 hiding (EQ, GT, LT)
 #endif
 
-import           Text.PrettyPrint.Leijen hiding ((<$>))
+import           Text.PrettyPrint.Leijen
 
 import           Language.Lua.Syntax
 
 intercalate :: Doc -> [Doc] -> Doc
 intercalate s elems = sep (punctuate s elems)
-
-infixr 5 <$>
-(<$>) :: Doc -> Doc -> Doc
-x <$> y | isEmpty y = x
-        | otherwise = x <> line <> y
 
 type Precedence = Int
 
