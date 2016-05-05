@@ -167,9 +167,7 @@ stringTests = testGroup "String tests"
              Right x -> assertEqual
                           "pretty printer didn't preserve"
                           contents
-                          (show (pprint x) ++ "\n"))
-                        -- text file lines always end in a newline
-                        -- but the pretty printer doesn't know this
+                          (show (pprint x)))
     ]
   where
     expected = Just "alo\n123\""
