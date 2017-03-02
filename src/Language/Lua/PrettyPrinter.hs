@@ -47,7 +47,7 @@ instance LPretty Exp where
     pprint' _ Nil            = text "nil"
     pprint' _ (Bool s)       = pprint s
     pprint' _ (Number n)     = text n
-    pprint' _ (String s)     = text s
+    pprint' _ (String s)     = text (show s)
     pprint' _ Vararg         = text "..."
     pprint' _ (EFunDef f)    = pprint f
     pprint' _ (PrefixExp pe) = pprint pe
